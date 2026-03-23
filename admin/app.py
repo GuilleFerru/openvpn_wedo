@@ -24,6 +24,7 @@ CLIENTS_DIR = "/app/clients"
 CCD_DIR = "/app/ccd"
 CLIENTS_DB = "/app/clients/clients.json"
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
+LOCAL_SERVER_IP = os.environ.get('LOCAL_SERVER_IP', '172.28.20.206')
 
 # =============================================================================
 # Network Configuration - Subnet /16: 10.8.0.0 - 10.8.255.255 (65,536 IPs)
@@ -135,7 +136,7 @@ def utc_to_argentina(utc_time_str):
 def load_clients_db():
     """Load clients database from JSON file"""
     if os.path.exists(CLIENTS_DB):
-        with open(CLIENTS_DB, 'r') as f:
+        with open(CLIENTS_DB, 'r', encoding='utf-8-sig') as f:
             data = json.load(f)
             if 'groups' not in data:
                 data = _create_default_db(data.get('clients', {}))
@@ -658,20 +659,21 @@ def create_client():
     try:
         # Create CCD file for static IP
         # Peer IP calculation: if client is even, peer is +1; if odd, peer is -1
-        os.makedirs(CCD_DIR, exist_ok=True)
-        if client_num % 2 == 0:
-            peer_num = client_num + 1
-        else:
-            peer_num = client_num - 1
-        peer_ip = group_client_to_ip(group_num, peer_num)
+        os.makedirs(CCD_DIR, mode=0o755, exist_ok=True)
+        # Ensure CCD dir is world-readable (OpenVPN runs as nobody)
+        os.chmod(CCD_DIR, 0o755)
         
-        with open(f'{CCD_DIR}/{name}', 'w') as f:
-            f.write(f'ifconfig-push {assigned_ip} {peer_ip}\n')
+        ccd_path = f'{CCD_DIR}/{name}'
+        with open(ccd_path, 'w') as f:
+            # topology subnet format: ifconfig-push <IP> <NETMASK>
+            f.write(f'ifconfig-push {assigned_ip} 255.255.0.0\n')
+        os.chmod(ccd_path, 0o644)
         
-        # Generate certificate
-        cmd = f'docker run -v {VOLUME_NAME}:/etc/openvpn --rm -i kylemanna/openvpn easyrsa build-client-full {name} nopass'
-        proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = proc.communicate(input=f'{password}\n'.encode(), timeout=120)
+        # Generate certificate (CA is nopass, no stdin needed)
+        cmd = f'docker run -v {VOLUME_NAME}:/etc/openvpn --rm kylemanna/openvpn easyrsa build-client-full {name} nopass'
+        result_cert = subprocess.run(cmd, shell=True, capture_output=True, timeout=120)
+        stdout, stderr = result_cert.stdout, result_cert.stderr
+        proc = result_cert  # For returncode check below
         
         if proc.returncode != 0:
             # Cleanup on failure
@@ -696,8 +698,20 @@ def create_client():
             return jsonify({'success': False, 'error': 'Error exportando configuración'})
         
         os.makedirs(CLIENTS_DIR, exist_ok=True)
-        with open(f'{CLIENTS_DIR}/{name}.ovpn', 'wb') as f:
-            f.write(result.stdout)
+        ovpn_content = result.stdout.decode()
+        
+        # Add local IP as primary remote for ALL clients
+        # so they can connect from LAN (local first, public fallback)
+        import re as re_mod
+        ovpn_content = re_mod.sub(
+            r'remote (\S+) (\d+) (\S+)',
+            f'remote {LOCAL_SERVER_IP} \\2 \\3\nremote \\1 \\2 \\3',
+            ovpn_content,
+            count=1
+        )
+        
+        with open(f'{CLIENTS_DIR}/{name}.ovpn', 'w') as f:
+            f.write(ovpn_content)
         
         # Confirm client number was used (updates counter)
         confirm_ip_used(group_id, client_num)
@@ -738,9 +752,10 @@ def revoke_client():
         return jsonify({'success': False, 'error': 'Nombre inválido'})
     
     try:
-        cmd = f'docker run -v {VOLUME_NAME}:/etc/openvpn --rm -i -e EASYRSA_BATCH=1 kylemanna/openvpn ovpn_revokeclient {name} remove'
-        proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = proc.communicate(input=f'{password}\n{password}\n'.encode(), timeout=120)
+        cmd = f'docker run -v {VOLUME_NAME}:/etc/openvpn --rm -e EASYRSA_BATCH=1 kylemanna/openvpn ovpn_revokeclient {name} remove'
+        result_rev = subprocess.run(cmd, shell=True, capture_output=True, timeout=120)
+        stdout, stderr = result_rev.stdout, result_rev.stderr
+        proc = result_rev  # For returncode check below
         
         output = (stdout.decode() + stderr.decode()).lower()
         success = 'revoking' in output or 'data base updated' in output

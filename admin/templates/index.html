@@ -1,194 +1,330 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
-<head>
+  <head>
     <title>WeDo VPN Manager</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>"
+    />
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <script>
+      // Apply saved theme immediately to prevent flash of wrong theme
+      (function () {
+        var theme = localStorage.getItem("vpn-theme") || "dark";
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+  </head>
 
-<body>
+  <body>
     <div class="header">
-        <div class="brand-logo">WeDo <span>VPN Manager</span></div>
+      <div class="brand-logo">WeDo <span>VPN Manager</span></div>
+      <div class="header-actions">
+        <button
+          class="theme-toggle"
+          id="themeToggle"
+          onclick="toggleTheme()"
+          title="Cambiar tema"
+        >
+          🌙
+        </button>
         <a href="/logout" class="btn-logout">Cerrar sesión</a>
+      </div>
     </div>
 
     <!-- Connected Clients -->
     <div class="card">
-        <div class="collapsible-header" onclick="toggleSection('connectedSection')">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span class="collapse-icon collapsed" id="connectedSection-icon">▼</span>
-                <h2>Clientes Conectados <span id="connectedCount" class="count-badge"></span></h2>
-            </div>
-            <button class="btn-small btn-secondary" id="btnRefreshConnected"
-                onclick="event.stopPropagation(); loadConnected()">↻</button>
+      <div
+        class="collapsible-header"
+        onclick="toggleSection('connectedSection')"
+      >
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span class="collapse-icon collapsed" id="connectedSection-icon"
+            >▼</span
+          >
+          <h2>
+            Clientes Conectados
+            <span id="connectedCount" class="count-badge"></span>
+          </h2>
         </div>
-        <div class="collapsible-content collapsed" id="connectedSection">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>Grupo</th>
-                        <th>IP VPN</th>
-                        <th>IP Real</th>
-                        <th>Conectado</th>
-                        <th>Tráfico</th>
-                    </tr>
-                </thead>
-                <tbody id="connectedList">
-                    <tr>
-                        <td colspan="6" style="color:#666">Cargando...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <button
+          class="btn-small btn-secondary"
+          id="btnRefreshConnected"
+          onclick="
+            event.stopPropagation();
+            loadConnected();
+          "
+        >
+          ↻
+        </button>
+      </div>
+      <div class="collapsible-content collapsed" id="connectedSection">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Grupo</th>
+              <th>IP VPN</th>
+              <th>IP Real</th>
+              <th>Conectado</th>
+              <th>Tráfico</th>
+            </tr>
+          </thead>
+          <tbody id="connectedList">
+            <tr>
+              <td colspan="6" style="color: #666">Cargando...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Rejected Clients -->
-    <div class="card" id="rejectedCard" style="display:none;">
-        <div class="collapsible-header" onclick="toggleSection('rejectedSection')">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span class="collapse-icon collapsed" id="rejectedSection-icon">▼</span>
-                <h2>Clientes Rechazados <span id="rejectedCount" class="count-badge count-danger"></span></h2>
-            </div>
-            <button class="btn-small btn-secondary" onclick="event.stopPropagation(); loadRejected()">↻</button>
+    <div class="card" id="rejectedCard" style="display: none">
+      <div
+        class="collapsible-header"
+        onclick="toggleSection('rejectedSection')"
+      >
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span class="collapse-icon collapsed" id="rejectedSection-icon"
+            >▼</span
+          >
+          <h2>
+            Clientes Rechazados
+            <span id="rejectedCount" class="count-badge count-danger"></span>
+          </h2>
         </div>
-        <div class="collapsible-content collapsed" id="rejectedSection">
-            <p class="info-text">Clientes bloqueados por no tener archivo CCD válido (revocados o inexistentes)</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>IP Real</th>
-                        <th>Último Intento</th>
-                        <th>Motivo</th>
-                    </tr>
-                </thead>
-                <tbody id="rejectedList">
-                    <tr>
-                        <td colspan="4" style="color:#666">Cargando...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <button
+          class="btn-small btn-secondary"
+          onclick="
+            event.stopPropagation();
+            loadRejected();
+          "
+        >
+          ↻
+        </button>
+      </div>
+      <div class="collapsible-content collapsed" id="rejectedSection">
+        <p class="info-text">
+          Clientes bloqueados por no tener archivo CCD válido (revocados o
+          inexistentes)
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>IP Real</th>
+              <th>Último Intento</th>
+              <th>Motivo</th>
+            </tr>
+          </thead>
+          <tbody id="rejectedList">
+            <tr>
+              <td colspan="4" style="color: #666">Cargando...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Grid: Groups + Create/Revoke -->
     <div class="grid">
-        <div>
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h2>Grupos</h2>
-                    <button class="btn-small" onclick="showCreateGroupModal()">+ Nuevo Grupo</button>
-                </div>
-                <div id="groupsList"></div>
-            </div>
+      <div>
+        <div class="card">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <h2>Grupos</h2>
+            <button class="btn-small" onclick="showCreateGroupModal()">
+              + Nuevo Grupo
+            </button>
+          </div>
+          <div id="groupsList"></div>
         </div>
-        <div>
-            <div class="card">
-                <h2>Crear Cliente</h2>
-                <p class="info-text">Los clientes del mismo grupo pueden verse entre sí. Admins ven todo.</p>
-                <form id="createForm">
-                    <input type="text" id="clientName" placeholder="Nombre (ej: gw-oficina, tecnico-juan)" required>
-                    <select id="clientGroup" required>
-                        <option value="">-- Seleccionar grupo --</option>
-                    </select>
-                    <input type="password" id="caPassword" placeholder="Contraseña de la CA" required>
-                    <button type="submit">Crear Cliente</button>
-                </form>
-                <div id="createStatus" class="status"></div>
-            </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Crear Cliente</h2>
+          <p class="info-text">
+            Los clientes del mismo grupo pueden verse entre sí. Admins ven todo.
+          </p>
+          <form id="createForm">
+            <input
+              type="text"
+              id="clientName"
+              placeholder="Nombre (ej: gw-oficina, tecnico-juan)"
+              required
+            />
+            <select id="clientGroup" required>
+              <option value="">-- Seleccionar grupo --</option>
+            </select>
+            <input
+              type="password"
+              id="caPassword"
+              placeholder="Contraseña de la CA"
+              required
+            />
+            <button type="submit">Crear Cliente</button>
+          </form>
+          <div id="createStatus" class="status"></div>
+        </div>
 
-            <div class="card">
-                <h2>Revocar Cliente</h2>
-                <form id="revokeForm">
-                    <input type="text" id="revokeClientName" placeholder="Nombre del cliente" required>
-                    <input type="password" id="revokePassword" placeholder="Contraseña de la CA" required>
-                    <button type="submit" class="btn-danger">Revocar</button>
-                </form>
-                <div id="revokeStatus" class="status"></div>
-            </div>
+        <div class="card">
+          <h2>Revocar Cliente</h2>
+          <form id="revokeForm">
+            <input
+              type="text"
+              id="revokeClientName"
+              placeholder="Nombre del cliente"
+              required
+            />
+            <input
+              type="password"
+              id="revokePassword"
+              placeholder="Contraseña de la CA"
+              required
+            />
+            <button type="submit" class="btn-danger">Revocar</button>
+          </form>
+          <div id="revokeStatus" class="status"></div>
         </div>
+      </div>
     </div>
 
     <!-- Clients by Group -->
     <div class="card">
-        <div class="collapsible-header" onclick="toggleSection('clientsSection')">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span class="collapse-icon" id="clientsSection-icon">▼</span>
-                <h2>Clientes por Grupo <span id="clientsCount" class="count-badge"></span></h2>
-            </div>
-            <button class="btn-small btn-secondary" id="btnRefreshClients"
-                onclick="event.stopPropagation(); loadClients()">↻</button>
+      <div class="collapsible-header" onclick="toggleSection('clientsSection')">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span class="collapse-icon" id="clientsSection-icon">▼</span>
+          <h2>
+            Clientes por Grupo
+            <span id="clientsCount" class="count-badge"></span>
+          </h2>
         </div>
-        <div class="collapsible-content" id="clientsSection">
-            <div id="clientsByGroup"></div>
-        </div>
+        <button
+          class="btn-small btn-secondary"
+          id="btnRefreshClients"
+          onclick="
+            event.stopPropagation();
+            loadClients();
+          "
+        >
+          ↻
+        </button>
+      </div>
+      <div class="collapsible-content" id="clientsSection">
+        <div id="clientsByGroup"></div>
+      </div>
     </div>
 
     <!-- Modal: Create Group -->
     <div id="modalCreateGroup" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Nuevo Grupo</h2>
-                <button class="modal-close" onclick="hideModal('modalCreateGroup')">&times;</button>
-            </div>
-            <form id="createGroupForm">
-                <label class="info-text">Nombre del grupo:</label>
-                <input type="text" id="groupName" placeholder="Ej: Empresa ABC, Fábrica Norte" required>
-
-                <label class="info-text">Iniciales del grupo (1-2 letras):</label>
-                <div class="monogram-input-row">
-                    <input type="text" id="groupIcon" maxlength="2" placeholder="Ej: CS"
-                        style="width: 80px; text-transform: uppercase; text-align: center; font-weight: 600;"
-                        oninput="this.value = this.value.toUpperCase().replace(/[^A-Z]/g, ''); updateMonogramPreview()">
-                    <div class="monogram-preview" id="monogramPreview">AB</div>
-                </div>
-
-                <label class="info-text">Rango de IPs asignado:</label>
-                <div class="range-preview" id="groupRangePreview">Cargando...</div>
-                <p class="info-text">Cada grupo puede tener hasta 12 clientes.</p>
-
-                <button type="submit">Crear Grupo</button>
-            </form>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Nuevo Grupo</h2>
+          <button class="modal-close" onclick="hideModal('modalCreateGroup')">
+            &times;
+          </button>
         </div>
+        <form id="createGroupForm">
+          <label class="info-text">Nombre del grupo:</label>
+          <input
+            type="text"
+            id="groupName"
+            placeholder="Ej: Empresa ABC, Fábrica Norte"
+            required
+          />
+
+          <label class="info-text">Iniciales del grupo (1-2 letras):</label>
+          <div class="monogram-input-row">
+            <input
+              type="text"
+              id="groupIcon"
+              maxlength="2"
+              placeholder="Ej: CS"
+              style="
+                width: 80px;
+                text-transform: uppercase;
+                text-align: center;
+                font-weight: 600;
+              "
+              oninput="
+                this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
+                updateMonogramPreview();
+              "
+            />
+            <div class="monogram-preview" id="monogramPreview">AB</div>
+          </div>
+
+          <label class="info-text">Rango de IPs asignado:</label>
+          <div class="range-preview" id="groupRangePreview">Cargando...</div>
+          <p class="info-text">Cada grupo puede tener hasta 254 clientes.</p>
+
+          <button type="submit">Crear Grupo</button>
+        </form>
+      </div>
     </div>
 
     <!-- Modal: Edit Group -->
     <div id="modalEditGroup" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Editar Grupo</h2>
-                <button class="modal-close" onclick="hideModal('modalEditGroup')">&times;</button>
-            </div>
-            <form id="editGroupForm">
-                <input type="hidden" id="editGroupId">
-                <label class="info-text">Nombre del grupo:</label>
-                <input type="text" id="editGroupName" placeholder="Nombre del grupo" required>
-
-                <label class="info-text">Iniciales del grupo (1-2 letras):</label>
-                <div class="monogram-input-row">
-                    <input type="text" id="editGroupIcon" maxlength="2" placeholder="Ej: CS"
-                        style="width: 80px; text-transform: uppercase; text-align: center; font-weight: 600;"
-                        oninput="this.value = this.value.toUpperCase().replace(/[^A-Z]/g, ''); updateEditMonogramPreview()">
-                    <div class="monogram-preview" id="editMonogramPreview">AB</div>
-                </div>
-
-                <button type="submit">Guardar Cambios</button>
-            </form>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Editar Grupo</h2>
+          <button class="modal-close" onclick="hideModal('modalEditGroup')">
+            &times;
+          </button>
         </div>
+        <form id="editGroupForm">
+          <input type="hidden" id="editGroupId" />
+          <label class="info-text">Nombre del grupo:</label>
+          <input
+            type="text"
+            id="editGroupName"
+            placeholder="Nombre del grupo"
+            required
+          />
+
+          <label class="info-text">Iniciales del grupo (1-2 letras):</label>
+          <div class="monogram-input-row">
+            <input
+              type="text"
+              id="editGroupIcon"
+              maxlength="2"
+              placeholder="Ej: CS"
+              style="
+                width: 80px;
+                text-transform: uppercase;
+                text-align: center;
+                font-weight: 600;
+              "
+              oninput="
+                this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
+                updateEditMonogramPreview();
+              "
+            />
+            <div class="monogram-preview" id="editMonogramPreview">AB</div>
+          </div>
+
+          <button type="submit">Guardar Cambios</button>
+        </form>
+      </div>
     </div>
 
     <script src="/static/js/app.js"></script>
 
     <!-- Footer -->
     <footer class="footer">
-        <div class="footer-main">© 2026 <strong>WeDo IoT Solutions</strong></div>
-        <div class="footer-sub">Desarrollado por Guillermo Ferrucci</div>
+      <div class="footer-main">© 2026 <strong>WeDo IoT Solutions</strong></div>
+      <div class="footer-sub">Desarrollado por Guillermo Ferrucci</div>
     </footer>
-</body>
-
+  </body>
 </html>

@@ -83,7 +83,7 @@ El sistema asignará automáticamente un rango de 12 IPs al nuevo grupo.
 
 ### Capacidad de grupos
 
-- Cada grupo tiene capacidad para **12 clientes**
+- Cada grupo tiene capacidad para **254 clientes**
 - El sistema soporta hasta **340 grupos**
 - Capacidad total: **4080 clientes**
 

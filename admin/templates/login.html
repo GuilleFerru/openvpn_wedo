@@ -1,23 +1,39 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
-<head>
+  <head>
     <title>WeDo VPN - Login</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>"
+    />
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <script>
+      (function () {
+        var theme = localStorage.getItem("vpn-theme") || "dark";
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+  </head>
 
-<body class="login-page">
+  <body class="login-page">
     <div class="login-box">
-        <div class="brand-logo" style="font-size: 32px; margin-bottom: 20px;">WeDo <span>VPN</span></div>
-        <form method="POST">
-            <input type="password" name="password" placeholder="Contraseña" required autofocus>
-            <button type="submit">Ingresar</button>
-        </form>
-        {% if error %}<p class="login-error">{{ error }}</p>{% endif %}
+      <div class="brand-logo" style="font-size: 32px; margin-bottom: 20px">
+        WeDo <span>VPN</span>
+      </div>
+      <form method="POST">
+        <input
+          type="password"
+          name="password"
+          placeholder="Contraseña"
+          required
+          autofocus
+        />
+        <button type="submit">Ingresar</button>
+      </form>
+      {% if error %}
+      <p class="login-error">{{ error }}</p>
+      {% endif %}
     </div>
-</body>
-
+  </body>
 </html>

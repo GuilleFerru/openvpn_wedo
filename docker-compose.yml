@@ -54,6 +54,7 @@ services:
     environment:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       - SECRET_KEY=${SECRET_KEY:-simple_secret}
+      - LOCAL_SERVER_IP=${LOCAL_SERVER_IP:-172.28.20.206}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./clients:/app/clients

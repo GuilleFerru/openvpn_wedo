@@ -26,8 +26,15 @@ __pycache__/
 .Python
 venv/
 env/
+Lib/
+Scripts/
+Include/
+pyvenv.cfg
 .env.local
 .env.*.local
+*.egg-info/
+dist/
+build/
 
 # CCD (configuraciones de clientes - contienen IPs asignadas)
 ccd/*
@@ -51,3 +58,7 @@ docker-compose.override.yml
 *.pem
 *.p12
 *.ovpn
+
+# Archivos generados / temporales del proyecto
+openvpn.conf.tmp
+terminal.log
