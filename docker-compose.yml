@@ -102,6 +102,7 @@ volumes:
   openvpn_openvpn_data:
     external: true
   traefik_letsencrypt:
+    external: true
 
 networks:
   admin_net:
