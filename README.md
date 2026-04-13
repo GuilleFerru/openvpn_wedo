@@ -24,15 +24,15 @@ Sistema de administración web para OpenVPN con aislamiento por grupos de client
 - Docker y Docker Compose
 - IP pública fija
 - Puerto 1194/UDP abierto en firewall
-- Puerto 8888/TCP para el panel admin (opcional, puede cambiarse)
+- Puerto 80/443 TCP para el panel admin (vía Caddy, configurable con HTTP_PORT/HTTPS_PORT)
 
 ## 🚀 Instalación
 
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/GuilleFerru/openvpn_vdd.git
-cd openvpn_vdd
+git clone https://github.com/GuilleFerru/openvpn_wedo.git
+cd openvpn_wedo
 ```
 
 ### 2. Configurar variables de entorno

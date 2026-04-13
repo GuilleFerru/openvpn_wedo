@@ -1,47 +1,42 @@
 services:
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: docker-socket-proxy
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      # Only allow what openvpn-admin needs: create/run/restart containers
+      CONTAINERS: 1
+      IMAGES: 1
+      POST: 1
+      DELETE: 1   # needed for docker run --rm to remove ephemeral containers
+    # Bind only to internal network — not exposed outside
+    networks:
+      - admin_net
+
   openvpn:
     image: kylemanna/openvpn
     container_name: openvpn
     restart: always
-    cap_add:
-      - NET_ADMIN
     ports:
       - "1194:1194/udp"
+    cap_add:
+      - NET_ADMIN
     volumes:
       - openvpn_openvpn_data:/etc/openvpn
       - ./ccd:/etc/openvpn/ccd
-    # ==========================================================================
-    # Reglas iptables para aislamiento entre grupos - Subred /16
-    # ==========================================================================
-    # Subred: 10.8.0.0/16
-    # - Admin (10.8.0.x): puede ver todo
-    # - Grupos N (10.8.N.x): cada uno es un /24 aislado (1-255)
-    # ==========================================================================
+    sysctls:
+      - net.ipv4.ip_forward=1
     command: >
       sh -c "
-        echo '=== Configurando reglas de aislamiento VPN (Subred /16) ===';
-        
-        # Admin (10.8.0.0/24) puede comunicarse con todos
-        iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT;
-        iptables -A FORWARD -d 10.8.0.0/24 -j ACCEPT;
-        
-        echo 'Admin (10.8.0.0/24) puede ver todo';
-        
-        # Generar reglas para cada grupo (1-255)
-        # Cada grupo es 10.8.N.0/24
-        
-        GROUP_COUNT=0;
-        for GROUP_ID in $$(seq 1 255); do
-          iptables -A FORWARD -s 10.8.$$GROUP_ID.0/24 -d 10.8.$$GROUP_ID.0/24 -j ACCEPT;
-          GROUP_COUNT=$$((GROUP_COUNT + 1));
-        done;
-        
-        echo \"Configurados $$GROUP_COUNT grupos (cada uno /24)\";
-        
-        # Bloquear trafico entre diferentes grupos
-        iptables -A FORWARD -s 10.8.0.0/16 -d 10.8.0.0/16 -j DROP;
-        
-        echo 'Reglas de aislamiento configuradas correctamente (Subred /16)';
+        iptables -F FORWARD;
+        iptables -P FORWARD DROP;
+        iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT;
+        iptables -A FORWARD -i tun0 -o tun0 -m iprange --src-range 10.8.0.1-10.8.0.254 -j ACCEPT;
+        iptables -A FORWARD -i tun0 -o tun0 -j DROP;
+        iptables -A FORWARD -i tun0 -o eth0 -j ACCEPT;
+        iptables -A FORWARD -i eth0 -o tun0 -m state --state ESTABLISHED,RELATED -j ACCEPT;
         ovpn_run
       "
 
@@ -49,19 +44,66 @@ services:
     build: ./admin
     container_name: openvpn-admin
     restart: always
-    ports:
-      - "8888:8080"
+    # Port NOT exposed directly — all access goes through Traefik (HTTPS)
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openvpn-admin.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.openvpn-admin.entrypoints=websecure"
+      - "traefik.http.routers.openvpn-admin.tls.certresolver=le"
+      - "traefik.http.services.openvpn-admin.loadbalancer.server.port=8080"
     environment:
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
-      - SECRET_KEY=${SECRET_KEY:-simple_secret}
-      - LOCAL_SERVER_IP=${LOCAL_SERVER_IP:-172.28.20.206}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
+      - LOCAL_SERVER_IP=${LOCAL_SERVER_IP:-}
+      - VOLUME_NAME=${VOLUME_NAME:-openvpn_openvpn_data}
+      # Route Docker CLI through the filtered proxy (no raw socket access)
+      - DOCKER_HOST=tcp://docker-socket-proxy:2375
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - ./clients:/app/clients
       - ./ccd:/app/ccd
     depends_on:
       - openvpn
+      - docker-socket-proxy
+    networks:
+      - admin_net
+      - default
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    restart: always
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+      - "${HTTPS_PORT:-8443}:443"
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.le.acme.tlschallenge=true"
+      - "--certificatesresolvers.le.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    depends_on:
+      - openvpn-admin
 
 volumes:
   openvpn_openvpn_data:
     external: true
+  traefik_letsencrypt:
+
+networks:
+  admin_net:
+    # Internal network shared only by docker-socket-proxy and openvpn-admin
+    internal: true
+  default:

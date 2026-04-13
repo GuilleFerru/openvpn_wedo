@@ -1,0 +1,10 @@
+# Terraform — runtime artifacts (no commitear)
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+
+# Nota: .terraform.lock.hcl SÍ se commitea — pinnea versiones de providers
+
+# Secrets — NUNCA commitear
+terraform.tfvars

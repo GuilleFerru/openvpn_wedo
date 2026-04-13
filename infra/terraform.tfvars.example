@@ -1,0 +1,15 @@
+# Copiar a terraform.tfvars y completar con valores reales
+# terraform.tfvars está en .gitignore — NUNCA commitear secrets
+
+project_id     = "integracion-tagoio"
+region         = "us-central1"
+zone           = "us-central1-a"
+domain_name    = "vpn.we-do.io"
+acme_email     = "admin@we-do.io"
+machine_type   = "e2-small"
+disk_size_gb   = 20
+repo_url       = "https://github.com/we-do-io/openvpn_wedo.git"
+
+# Secrets — REQUERIDOS (sin defaults)
+admin_password = ""
+secret_key     = ""

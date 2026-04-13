@@ -246,22 +246,25 @@ ls -la ~/openvpn_wedo/ccd/          # Directorio con perms 755
 
 ## 7. Credenciales
 
-| Recurso     | Usuario  | Password                |
-| ----------- | -------- | ----------------------- |
-| VM SSH      | `edciot` | `Edc2820`               |
-| Panel Admin | —        | `admin123`              |
-| CA OpenVPN  | —        | Sin password (`nopass`) |
+> ⚠️ Las credenciales reales no se almacenan en este documento.
+> Configurar mediante variables de entorno en el archivo `.env` (ver `.env.example`).
+> El archivo `.env` está en `.gitignore` y nunca debe commitearse.
+
+| Recurso     | Usuario  | Dónde configurar          |
+| ----------- | -------- | ------------------------- |
+| VM SSH      | `edciot` | Clave SSH en `~/.ssh/`    |
+| Panel Admin | —        | `ADMIN_PASSWORD` en `.env` |
+| CA OpenVPN  | —        | Sin password (`nopass`)   |
 
 ---
 
 ## 8. URLs
 
-| Servicio                | URL                                |
-| ----------------------- | ---------------------------------- |
-| Panel Admin (LAN)       | http://172.28.20.206:8888          |
-| Panel Admin (local dev) | http://localhost:8888              |
-| OpenVPN Server          | `181.228.71.16:1194/UDP` (público) |
-| OpenVPN Server          | `172.28.20.206:1194/UDP` (LAN)     |
+| Servicio                | URL                                              |
+| ----------------------- | ------------------------------------------------ |
+| Panel Admin (GCE)       | https://\<DOMAIN\>  (puerto 443, vía Caddy)      |
+| Panel Admin (local dev) | https://localhost:8443  (HTTP_PORT=8080, HTTPS_PORT=8443) |
+| OpenVPN Server          | `<IP_PUBLICA>:1194/UDP`                          |
 
 ---
 
@@ -304,6 +307,37 @@ ssh edciot@172.28.20.206 "docker logs openvpn --tail 50"
 
 ```bash
 ssh edciot@172.28.20.206 "docker logs openvpn-admin --tail 50"
+```
+
+Los logs del panel admin son JSON estructurado. En Google Cloud, Cloud Logging los parsea automáticamente. Para leerlos con formato legible en la VM:
+
+```bash
+ssh edciot@172.28.20.206 "docker logs openvpn-admin --tail 50 | python3 -m json.tool"
+```
+
+### Backup de datos
+
+```bash
+# En la VM
+cd ~/openvpn_wedo
+chmod +x backup.sh
+./backup.sh                   # guarda en ~/openvpn_backups/<timestamp>/
+./backup.sh /ruta/alternativa  # destino personalizado
+```
+
+El script genera:
+
+- `openvpn_data.tar.gz` — volumen PKI completo (CA, certs, keys)
+- `clients.json` — base de datos de grupos y clientes
+- `ccd.tar.gz` — archivos de IP fija por cliente
+
+Los backups con más de 30 días se eliminan automáticamente.
+
+**Recomendación para producción en GCE**: configurar un cron que ejecute `backup.sh` diariamente y copie los archivos a un bucket de GCS:
+
+```bash
+# crontab -e
+0 3 * * * cd ~/openvpn_wedo && ./backup.sh && gsutil -m cp -r ~/openvpn_backups/$(ls -t ~/openvpn_backups | head -1) gs://<BUCKET>/openvpn/
 ```
 
 ---

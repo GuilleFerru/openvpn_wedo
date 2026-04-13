@@ -71,7 +71,7 @@ Un grupo es un conjunto de clientes VPN que pueden comunicarse entre sí. Los cl
    - **Icono**: Seleccionar un icono representativo
 3. Hacer clic en **Crear Grupo**
 
-El sistema asignará automáticamente un rango de 12 IPs al nuevo grupo.
+El sistema asignará automáticamente un rango de 254 IPs al nuevo grupo.
 
 ### Editar un grupo
 
@@ -84,8 +84,8 @@ El sistema asignará automáticamente un rango de 12 IPs al nuevo grupo.
 ### Capacidad de grupos
 
 - Cada grupo tiene capacidad para **254 clientes**
-- El sistema soporta hasta **340 grupos**
-- Capacidad total: **4080 clientes**
+- El sistema soporta hasta **255 grupos**
+- Capacidad total: **64.770 clientes**
 
 ---
 
@@ -99,7 +99,7 @@ El sistema asignará automáticamente un rango de 12 IPs al nuevo grupo.
      - Solo letras, números, guiones y guiones bajos
      - Sin espacios
    - **Grupo**: Seleccionar el grupo al que pertenecerá
-   - **Contraseña de la CA**: La contraseña creada durante la instalación
+   - **Contraseña de la CA**: Cualquier valor (la CA no tiene contraseña — campo requerido por el formulario pero no se usa)
 3. Hacer clic en **Crear Cliente**
 4. Esperar a que se genere (puede tardar unos segundos)
 5. Descargar el archivo `.ovpn` haciendo clic en **📥 Descargar .ovpn**
@@ -147,7 +147,7 @@ Muestra en tiempo real:
 
 **Actualización automática:** Cada 30 segundos
 
-**Tip:** Hacer clic en la IP VPN abre esa dirección en una nueva pestaña (útil para acceder a interfaces web de dispositivos).
+**Tip:** La IP VPN permite identificar al cliente en la red privada para acceder a sus interfaces web o servicios internos.
 
 ### Clientes Rechazados
 
