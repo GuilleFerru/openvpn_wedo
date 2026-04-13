@@ -364,6 +364,8 @@ async function loadGroups() {
     return a[1].name.localeCompare(b[1].name);
   });
 
+  document.getElementById("groupsCount").textContent = sortedGroups.length;
+
   if (sortedGroups.length === 0) {
     container.innerHTML =
       '<div class="empty-state"><div class="icon">📁</div><p>No hay grupos creados</p></div>';
@@ -520,13 +522,17 @@ async function loadConnected() {
         const grpBadge = c.group_name
           ? `<span class="badge badge-group">${esc(c.group_icon)} ${esc(c.group_name)}</span>`
           : '<span style="color:#666">-</span>';
-        // VPN IP displayed as plain text (not a link) to prevent href injection
-        const vpnIp = esc(c.vpn_ip || "Dinámica");
+        // VPN IP: link only when it looks like a real IPv4 (prevents href injection)
+        const rawVpnIp = c.vpn_ip || "";
+        const isRealIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(rawVpnIp);
+        const vpnIpCell = isRealIp
+          ? `<a href="http://${esc(rawVpnIp)}" target="_blank" rel="noopener noreferrer" class="vpn-ip-link">${esc(rawVpnIp)}</a>`
+          : `<span class="vpn-ip-dynamic">Dinámica</span>`;
         return `
           <tr>
             <td><strong>${esc(c.name)}</strong></td>
             <td>${grpBadge}</td>
-            <td style="font-family:monospace">${vpnIp}</td>
+            <td style="font-family:monospace">${vpnIpCell}</td>
             <td style="font-family:monospace;color:#888">${esc(c.real_ip)}</td>
             <td style="color:#888;font-size:12px">${esc(c.connected_since)}</td>
             <td style="font-size:12px">↓${esc(c.bytes_recv)} ↑${esc(c.bytes_sent)}</td>
