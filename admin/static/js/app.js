@@ -50,9 +50,12 @@ function toggleTheme() {
 function updateThemeIcon(theme) {
   const btn = document.getElementById("themeToggle");
   if (btn) {
-    btn.textContent = theme === "dark" ? "☀️" : "🌙";
+    btn.innerHTML = theme === "dark"
+      ? '<i data-lucide="sun"></i>'
+      : '<i data-lucide="moon"></i>';
     btn.title =
       theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
+    if (typeof lucide !== "undefined") lucide.createIcons();
   }
 }
 
@@ -289,8 +292,8 @@ document.getElementById("createForm").onsubmit = async (e) => {
     const sep = document.createTextNode(" \u00a0 ");
     const link = document.createElement("a");
     link.href = "/download/" + encodeURIComponent(d.name);
-    link.style.cssText = "color:#00d4ff;font-weight:bold;";
-    link.textContent = "📥 Descargar .ovpn";
+    link.className = "download-link";
+    link.textContent = "↓ Descargar .ovpn";
     const note = document.createElement("span");
     note.style.cssText = "color:#888;font-size:12px;";
     note.textContent = " (recargando en 3s...)";
@@ -378,8 +381,7 @@ async function loadGroups() {
             <div>
               <span class="group-icon">${esc(g.icon)}</span>
               <span class="group-name">${esc(g.name)}</span>
-              ${isAdmin ? '<span class="badge badge-admin" style="margin-left:10px;">VE TODO</span>' : ""}
-              ${!isAdmin ? `<button class="btn-edit" data-gid="${id}">✏️</button>` : ""}
+              ${!isAdmin ? `<button class="btn-edit" data-gid="${id}"><i data-lucide="pencil"></i></button>` : ""}
             </div>
             <div style="text-align:right;">
               <div><strong>${used}</strong> / ${total}</div>
@@ -390,6 +392,7 @@ async function loadGroups() {
       `;
     }
     container.innerHTML = html;
+    if (typeof lucide !== "undefined") lucide.createIcons();
   }
 
   select.innerHTML = '<option value="">-- Seleccionar grupo --</option>';
@@ -411,7 +414,8 @@ async function loadGroups() {
 
 async function loadClients() {
   const btn = document.getElementById("btnRefreshClients");
-  btn.innerHTML = "⏳";
+  btn.innerHTML = '<i data-lucide="loader-circle" class="spin"></i>';
+  if (typeof lucide !== "undefined") lucide.createIcons();
   btn.disabled = true;
 
   const r = await fetch("/api/clients");
@@ -445,7 +449,7 @@ async function loadClients() {
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="collapse-icon collapsed" id="group-icon-${gid}">▼</span>
           <span style="font-size:20px;">${esc(g.icon)}</span>
-          <strong style="color:#ffd700;">${esc(g.name)}</strong>
+          <strong class="group-section-name">${esc(g.name)}</strong>
           <span class="count-badge">${clients.length}</span>
           ${onlineCount > 0 ? `<span class="badge badge-online">${onlineCount} online</span>` : ""}
         </div>
@@ -470,7 +474,7 @@ async function loadClients() {
               <span class="client-ip">${esc(c.ip || "IP dinámica")}</span>
               ${badge}
             </div>
-            <a href="/download/${encodeURIComponent(c.name)}" class="btn-small" style="background:#0f3460;color:#00d4ff;">📥 .ovpn</a>
+            <a href="/download/${encodeURIComponent(c.name)}" class="btn-small btn-secondary"><i data-lucide="download" style="width:12px;height:12px;vertical-align:middle;margin-right:3px;"></i>.ovpn</a>
           </div>
         `;
       }
@@ -483,9 +487,11 @@ async function loadClients() {
     '<div class="empty-state"><div class="icon">👥</div><p>No hay clientes</p></div>';
 
   restoreGroupStates();
+  if (typeof lucide !== "undefined") lucide.createIcons();
 
-  btn.innerHTML = "🔄";
+  btn.innerHTML = '<i data-lucide="refresh-cw"></i>';
   btn.disabled = false;
+  if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 // ============================================
@@ -494,7 +500,8 @@ async function loadClients() {
 
 async function loadConnected() {
   const btn = document.getElementById("btnRefreshConnected");
-  btn.innerHTML = "⏳";
+  btn.innerHTML = '<i data-lucide="loader-circle" class="spin"></i>';
+  if (typeof lucide !== "undefined") lucide.createIcons();
   btn.disabled = true;
 
   const r = await fetch("/api/connected");
@@ -529,8 +536,9 @@ async function loadConnected() {
       .join("");
   }
 
-  btn.innerHTML = "🔄";
+  btn.innerHTML = '<i data-lucide="refresh-cw"></i>';
   btn.disabled = false;
+  if (typeof lucide !== "undefined") lucide.createIcons();
   loadClients();
 }
 

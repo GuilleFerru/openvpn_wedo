@@ -58,6 +58,48 @@
 }
 
 /* ============================================================
+   Light theme
+   ============================================================ */
+[data-theme="light"] {
+  --bg:           #f0f1f3;
+  --surface:      #ffffff;
+  --surface-2:    #f4f5f7;
+  --surface-3:    #e8eaed;
+  --text:         #1e2124;
+  --muted:        #636870;
+  --muted-2:      #9ea1a2;
+
+  --shadow-card:
+    0 2px 0 rgba(255,255,255,0.85) inset,
+    0 8px 24px rgba(0,0,0,0.09),
+    0 2px 6px rgba(0,0,0,0.06);
+  --shadow-card-hover:
+    0 2px 0 rgba(255,255,255,0.9) inset,
+    0 12px 32px rgba(0,0,0,0.13),
+    0 4px 10px rgba(0,0,0,0.08),
+    0 0 0 1px rgba(238,118,35,0.14);
+  --shadow-btn:
+    0 4px 12px rgba(238,118,35,0.28),
+    0 1px 0 rgba(255,255,255,0.5) inset,
+    0 -1px 0 rgba(0,0,0,0.10) inset;
+  --shadow-btn-danger:
+    0 4px 12px rgba(224,82,82,0.22),
+    0 1px 0 rgba(255,255,255,0.5) inset,
+    0 -1px 0 rgba(0,0,0,0.10) inset;
+  --shadow-input:
+    0 2px 6px rgba(0,0,0,0.07) inset,
+    0 1px 0 rgba(255,255,255,0.9);
+  --shadow-stat-orange:
+    0 2px 0 rgba(255,255,255,0.20) inset,
+    0 8px 24px rgba(238,118,35,0.35),
+    0 2px 6px rgba(0,0,0,0.10);
+  --shadow-stat-green:
+    0 2px 0 rgba(255,255,255,0.20) inset,
+    0 8px 24px rgba(61,220,132,0.25),
+    0 2px 6px rgba(0,0,0,0.10);
+}
+
+/* ============================================================
    Reset
    ============================================================ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -100,7 +142,34 @@ a { color: inherit; text-decoration: none; }
 
 .header-actions { display: flex; align-items: center; gap: 10px; }
 
-.theme-toggle { display: none !important; }
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: var(--surface-3);
+  border: none;
+  border-radius: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+  box-shadow: 0 2px 0 rgba(255,255,255,0.04) inset, 0 3px 8px rgba(0,0,0,0.22);
+  transition: color 0.15s, box-shadow 0.15s, transform 0.15s;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.theme-toggle:hover {
+  color: var(--orange);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 0 rgba(255,255,255,0.05) inset, 0 4px 12px rgba(0,0,0,0.28);
+  background: var(--surface-3);
+  opacity: 1;
+  filter: none;
+}
+.theme-toggle svg { width: 15px; height: 15px; }
 
 .btn-logout {
   font-family: 'Outfit', sans-serif;
@@ -814,6 +883,16 @@ body.login-page {
   margin-top: 8px;
 }
 .footer strong { color: var(--orange); font-weight: 600; }
+
+/* ============================================================
+   Icon library (Lucide) helpers
+   ============================================================ */
+.btn-icon svg, .btn-edit svg { width: 14px; height: 14px; pointer-events: none; }
+.theme-toggle svg { width: 15px; height: 15px; }
+.group-section-name { color: var(--text); font-weight: 600; }
+.download-link { color: var(--orange); font-weight: 600; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.8s linear infinite; }
 
 /* ============================================================
    Responsive

@@ -6,8 +6,12 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23ee7623'/><text y='.88em' font-size='68' text-anchor='middle' x='50' fill='white' font-weight='900'>V</text></svg>" />
     <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script>
-      (function () { document.documentElement.setAttribute("data-theme", "dark"); })();
+      (function () {
+        var saved = localStorage.getItem("vpn-theme") || "dark";
+        document.documentElement.setAttribute("data-theme", saved);
+      })();
     </script>
   </head>
   <body>
@@ -16,7 +20,7 @@
     <div class="topbar">
       <div class="brand-logo">WeDo <span>VPN</span></div>
       <div class="header-actions">
-        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">☀️</button>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema"><i data-lucide="sun"></i></button>
         <a href="/logout" class="btn-logout">Cerrar sesión</a>
       </div>
     </div>
@@ -56,7 +60,7 @@
                 class="btn-icon btn-secondary"
                 id="btnRefreshConnected"
                 onclick="event.stopPropagation(); loadConnected()"
-              >↻</button>
+              ><i data-lucide="refresh-cw"></i></button>
             </div>
             <div class="collapsible-content collapsed" id="connectedSection">
               <table>
@@ -119,7 +123,7 @@
                 class="btn-icon btn-secondary"
                 id="btnRefreshClients"
                 onclick="event.stopPropagation(); loadClients()"
-              >↻</button>
+              ><i data-lucide="refresh-cw"></i></button>
             </div>
             <div class="collapsible-content" id="clientsSection">
               <div id="clientsByGroup"></div>
@@ -268,5 +272,6 @@
     </div>
 
     <script src="/static/js/app.js"></script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
   </body>
 </html>
