@@ -934,13 +934,13 @@ body.login-page {
   .col-data, .col-actions { gap: 14px; }
 }
 
-/* Large mobile */
+/* Mobile */
 @media (max-width: 640px) {
+  /* Topbar: edge-to-edge, no rounded corners */
   .topbar {
-    padding: 0 14px;
-    height: 50px;
-    border-radius: 0 0 12px 12px;
-    gap: 8px;
+    padding: 0 16px;
+    height: 52px;
+    border-radius: 0;
   }
   .brand-logo { font-size: 16px; }
   .btn-logout {
@@ -949,9 +949,9 @@ body.login-page {
     letter-spacing: 0.03em;
   }
 
-  .page { padding: 14px 12px 24px; }
+  .page { padding: 16px 14px 28px; }
 
-  /* Stats: 2-col grid, third card full-width */
+  /* Stats: 2-col grid, third card always full-width */
   .stats-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -962,50 +962,41 @@ body.login-page {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 18px;
+    padding: 14px 20px;
   }
-  .stats-row .stat-card:nth-child(3) .stat-lbl {
-    margin-top: 0;
-  }
+  .stats-row .stat-card:nth-child(3) .stat-lbl { margin-top: 0; }
 
   /* Scrollable tables */
-  .collapsible-content,
-  .collapsible-content > div {
+  .collapsible-content {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
   table { min-width: 460px; }
-  th, td { padding: 9px 12px; font-size: 12px; }
-  th { font-size: 9px; }
-
-  /* Cards */
-  .clay-card { border-radius: 14px; }
-  .clay-card-header { padding: 14px 16px 12px; }
-  .card-body { padding: 14px 16px; }
-  .collapsible-header { padding: 14px 16px; }
-
-  /* Group rows */
-  .group-card { padding: 10px 16px; }
-  .group-header-collapsible { padding: 9px 14px; }
-  .client-row { padding: 8px 14px; }
+  th { font-size: 9px; padding: 9px 12px; }
+  td { font-size: 12px; padding: 10px 12px; }
 
   /* Modal */
   .modal-content { width: 96vw; border-radius: 16px; }
   .modal-body { padding: 16px 16px 20px; }
 }
 
-/* Small mobile */
+/* Small mobile — stack everything */
 @media (max-width: 400px) {
   .stats-row {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
-  .stats-row .stat-card:nth-child(3) {
+  .stats-row .stat-card {
     grid-column: span 1;
+    padding: 16px 20px;   /* mismo padding que clay-card */
     display: block;
   }
-  .stats-row .stat-card:nth-child(3) .stat-lbl {
-    margin-top: 5px;
+  .stats-row .stat-card:nth-child(3) {
+    padding: 16px 20px;
+    display: block;
   }
+  .stats-row .stat-card:nth-child(3) .stat-lbl { margin-top: 5px; }
+
   .header-actions { gap: 6px; }
-  .btn-logout { display: none; } /* too cramped — rely on /logout route */
+  .btn-logout { font-size: 10px; padding: 5px 8px; }
 }
