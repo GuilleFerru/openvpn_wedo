@@ -45,12 +45,7 @@ services:
     container_name: openvpn-admin
     restart: always
     # Port NOT exposed directly — all access goes through Traefik (HTTPS)
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.openvpn-admin.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.openvpn-admin.entrypoints=websecure"
-      - "traefik.http.routers.openvpn-admin.tls.certresolver=le"
-      - "traefik.http.services.openvpn-admin.loadbalancer.server.port=8080"
+    # Routing definido en traefik-dynamic.yml (file provider, no labels)
     environment:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - SECRET_KEY=${SECRET_KEY}
@@ -75,15 +70,20 @@ services:
       start_period: 15s
 
   traefik:
-    image: traefik:v3.3
+    image: traefik:v3.4
     container_name: traefik
     restart: always
     ports:
       - "${HTTP_PORT:-8080}:80"
       - "${HTTPS_PORT:-8443}:443"
+    environment:
+      # Sustituida en traefik-dynamic.yml mediante {{env "DOMAIN"}}
+      - DOMAIN=${DOMAIN}
     command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
+      # File provider en vez de Docker provider — evita bug de API version
+      # con Docker Engine >= 27 (Traefik hardcodea /v1.24/ y el daemon lo rechaza)
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      - "--providers.file.watch=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
@@ -92,7 +92,7 @@ services:
       - "--certificatesresolvers.le.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik-dynamic.yml:/etc/traefik/dynamic.yml:ro
       - traefik_letsencrypt:/letsencrypt
     depends_on:
       - openvpn-admin

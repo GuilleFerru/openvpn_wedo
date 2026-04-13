@@ -1,0 +1,20 @@
+# Traefik dynamic configuration — file provider
+# Se usa en lugar del Docker provider porque Docker >= 27 exige API >= 1.44
+# y Traefik hardcodea /v1.24/ en sus requests a la Docker API (bug conocido).
+# Con file provider no se toca la Docker API — los routes son estáticos.
+
+http:
+  routers:
+    openvpn-admin:
+      rule: "Host(`{{env "DOMAIN"}}`)"
+      entryPoints:
+        - websecure
+      service: openvpn-admin
+      tls:
+        certResolver: le
+
+  services:
+    openvpn-admin:
+      loadBalancer:
+        servers:
+          - url: "http://openvpn-admin:8080"
