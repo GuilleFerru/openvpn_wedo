@@ -29,6 +29,17 @@ docker compose logs -f openvpn-admin
 
 There are no tests, linters, or CI pipelines configured.
 
+## Approach
+- Think before acting. Read existing files before writing code.
+- Be concise in output but thorough in reasoning.
+- Prefer editing over rewriting whole files.
+- Do not re-read files you have already read unless the file may have changed.
+- Test your code before declaring done.
+- No sycophantic openers or closing fluff.
+- Keep solutions simple and direct.
+- User instructions always override this file.
+- **Mantener local y remoto sincronizados.** Cualquier fix aplicado por SSH/manualmente en la VM de producción debe replicarse inmediatamente en el código local (Terraform, `infra/scripts/startup.sh`, `docker-compose.yml`, etc.) para que un redeploy limpio no reintroduzca el bug. Aplica en ambos sentidos: cambios locales deben llegar a la VM, y hotfixes en la VM deben llegar al repo.
+
 ## Architecture
 
 **Stack**: Python 3.11 / Flask backend, vanilla JS frontend, Docker Compose orchestration, JSON file as database (`clients/clients.json`).
@@ -57,3 +68,7 @@ Defined in `.env` (see `.env.example`):
 - `ADMIN_PASSWORD` — web panel login password
 - `SECRET_KEY` — Flask session secret
 - `LOCAL_SERVER_IP` — local VM IP for dual-remote in .ovpn configs
+
+## knowledge base
+- C:\Users\EDC-PC09\Documents\repos\openvpn_wedo\docs
+

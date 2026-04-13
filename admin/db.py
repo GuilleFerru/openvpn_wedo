@@ -39,7 +39,9 @@ def _create_default_db(existing_clients=None):
                 'name': 'Administradores',
                 'icon': '👑',
                 'group_num': ADMIN_GROUP_NUM,
-                'next_client': 1,
+                # Admin arranca en .2: la .1 del octeto 0 (10.8.0.1) queda
+                # reservada para el gateway del server OpenVPN.
+                'next_client': 2,
                 'can_see_all': True,
                 'is_system': True,
             }
@@ -121,10 +123,13 @@ def recalculate_group_counters():
                 except (ValueError, IndexError):
                     pass
 
-        # Reset next_client to max_used + 1 (or 1 if no clients)
+        # Reset next_client to max_used + 1 (o al mínimo del grupo si no hay clientes).
+        # El grupo admin reserva la .1 para el gateway del server, así que su
+        # mínimo es 2. Los demás grupos pueden usar .1 libremente.
         for gid in db['groups']:
             octets = group_clients.get(gid)
-            db['groups'][gid]['next_client'] = max(octets) + 1 if octets else 1
+            min_client = 2 if db['groups'][gid].get('group_num') == ADMIN_GROUP_NUM else 1
+            db['groups'][gid]['next_client'] = max(octets) + 1 if octets else min_client
 
         save_clients_db(db)
         return {
