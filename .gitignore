@@ -7,6 +7,9 @@ clients/*.ovpn
 # Variables de entorno (contienen contraseñas)
 .env
 
+# logs
+logs-errores/
+
 # Sistema
 .DS_Store
 Thumbs.db
