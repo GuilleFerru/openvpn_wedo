@@ -39,6 +39,7 @@ There are no tests, linters, or CI pipelines configured.
 - Keep solutions simple and direct.
 - User instructions always override this file.
 - **Mantener local y remoto sincronizados.** Cualquier fix aplicado por SSH/manualmente en la VM de producción debe replicarse inmediatamente en el código local (Terraform, `infra/scripts/startup.sh`, `docker-compose.yml`, etc.) para que un redeploy limpio no reintroduzca el bug. Aplica en ambos sentidos: cambios locales deben llegar a la VM, y hotfixes en la VM deben llegar al repo.
+- Use caveman plugin
 
 ## Architecture
 

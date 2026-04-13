@@ -11,8 +11,7 @@ services:
       IMAGES: 1
       POST: 1
       DELETE: 1   # needed for docker run --rm to remove ephemeral containers
-      EXEC: 1     # needed for 'docker exec openvpn cat /tmp/openvpn-status.log'
-                  # (listado de conexiones activas en el panel)
+      EXEC: 1
     # Bind only to internal network — not exposed outside
     networks:
       - admin_net
