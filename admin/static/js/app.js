@@ -273,7 +273,6 @@ document.getElementById("createForm").onsubmit = async (e) => {
     headers: jsonHeaders(),
     body: JSON.stringify({
       name: document.getElementById("clientName").value,
-      password: document.getElementById("caPassword").value,
       group: document.getElementById("clientGroup").value,
     }),
   });
@@ -328,7 +327,6 @@ document.getElementById("revokeForm").onsubmit = async (e) => {
     headers: jsonHeaders(),
     body: JSON.stringify({
       name: document.getElementById("revokeClientName").value,
-      password: document.getElementById("revokePassword").value,
     }),
   });
   const d = await r.json();

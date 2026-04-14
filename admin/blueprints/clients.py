@@ -159,11 +159,10 @@ def rejected_clients():
 def create_client():
     data     = request.json
     name     = data.get('name', '').strip()
-    password = data.get('password', '')
     group_id = data.get('group', '')
 
-    if not name or not password:
-        return jsonify({'success': False, 'error': 'Nombre y contraseña requeridos'})
+    if not name:
+        return jsonify({'success': False, 'error': 'Nombre requerido'})
     if not group_id:
         return jsonify({'success': False, 'error': 'Debe seleccionar un grupo'})
     if not re.match(r'^[a-zA-Z0-9_-]+$', name):
@@ -192,8 +191,6 @@ def create_client():
         returncode, err = _run_easyrsa_build(name)
         if returncode != 0:
             _remove_ccd(name)
-            if 'bad decrypt' in err or 'pass phrase' in err:
-                return jsonify({'success': False, 'error': 'Contraseña de CA incorrecta'})
             if 'already exists' in err:
                 return jsonify({'success': False, 'error': 'Ya existe un cliente con ese nombre'})
             return jsonify({'success': False, 'error': 'Error generando certificado'})
@@ -229,10 +226,9 @@ def create_client():
 def revoke_client():
     data     = request.json
     name     = data.get('name', '').strip()
-    password = data.get('password', '')
 
-    if not name or not password:
-        return jsonify({'success': False, 'error': 'Nombre y contraseña requeridos'})
+    if not name:
+        return jsonify({'success': False, 'error': 'Nombre requerido'})
     if not re.match(r'^[a-zA-Z0-9_-]+$', name):
         return jsonify({'success': False, 'error': 'Nombre inválido'})
 

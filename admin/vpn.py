@@ -46,10 +46,13 @@ def _write_ccd(name, assigned_ip):
 def _run_easyrsa_build(name):
     """
     Build client certificate via easyrsa inside the OpenVPN container.
+    Certs last 10 years (3650 days) to avoid losing access to remote
+    gateways that can't be reconfigured without VPN connectivity.
     Returns (returncode, stderr_lower).
     """
     result = subprocess.run(
         ['docker', 'run', '-v', f'{VOLUME_NAME}:/etc/openvpn', '--rm',
+         '-e', 'EASYRSA_CERT_EXPIRE=3650',
          'kylemanna/openvpn', 'easyrsa', 'build-client-full', name, 'nopass'],
         capture_output=True, timeout=120,
     )
