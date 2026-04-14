@@ -1,236 +1,214 @@
-# 📖 Guía de Usuario - OpenVPN Admin Panel
+# Guia de Usuario - WeDo VPN Admin
 
-Esta guía explica cómo utilizar el panel de administración de OpenVPN para gestionar clientes y grupos.
-
----
-
-## 📑 Índice
-
-1. [Acceso al Panel](#acceso-al-panel)
-2. [Interfaz Principal](#interfaz-principal)
-3. [Gestión de Grupos](#gestión-de-grupos)
-4. [Gestión de Clientes](#gestión-de-clientes)
-5. [Monitoreo](#monitoreo)
-6. [Preguntas Frecuentes](#preguntas-frecuentes)
+Panel de administracion para gestionar clientes y grupos OpenVPN.
 
 ---
 
-## 🔐 Acceso al Panel
+## Acceso al Panel
 
-### Ingresar al sistema
+1. Abrir el navegador: `https://vpn.we-do.io`
+2. Ingresar la contrasena de administrador
+3. Click en **Ingresar**
 
-1. Abrir el navegador y acceder a: `http://IP_DEL_SERVIDOR:8888`
-2. Ingresar la contraseña de administrador
-3. Hacer clic en **Ingresar**
-
-![Login](https://via.placeholder.com/400x200/1a1a2e/00d4ff?text=Login+Screen)
-
-### Cerrar sesión
-
-Hacer clic en el botón **🚪 Cerrar sesión** en la esquina superior derecha.
+Para cerrar sesion: click en **Cerrar sesion** en la esquina superior derecha.
 
 ---
 
-## 🖥️ Interfaz Principal
+## Interfaz Principal
 
-La interfaz está dividida en varias secciones colapsables:
+La interfaz tiene dos columnas:
 
-### Secciones principales
+**Columna izquierda (datos):**
+- Conexiones activas
+- Clientes rechazados (visible solo si hay)
+- Clientes por grupo
 
-| Sección | Descripción |
-|---------|-------------|
-| 📡 **Clientes Conectados** | Muestra clientes actualmente conectados a la VPN |
-| 🚫 **Clientes Rechazados** | Muestra intentos de conexión bloqueados |
-| 📁 **Grupos** | Lista de grupos disponibles con capacidad |
-| ➕ **Crear Cliente** | Formulario para crear nuevos clientes |
-| ⚠️ **Revocar Cliente** | Formulario para revocar certificados |
-| 📋 **Clientes por Grupo** | Vista expandible de todos los clientes organizados por grupo |
+**Columna derecha (acciones):**
+- Grupos
+- Nuevo cliente
+- Revocar cliente
 
-### Expandir/Contraer secciones
+**Stats row** (arriba): conectados, clientes totales, grupos activos.
 
-- Hacer clic en el encabezado de cualquier sección para expandirla o contraerla
-- El estado se guarda automáticamente (persiste al recargar la página)
-- Los grupos individuales también son expandibles
+Todas las secciones son colapsables (click en el header). El estado se guarda automaticamente.
 
 ---
 
-## 📁 Gestión de Grupos
+## Gestion de Grupos
 
-### ¿Qué es un grupo?
+### Que es un grupo
 
-Un grupo es un conjunto de clientes VPN que pueden comunicarse entre sí. Los clientes de **diferentes grupos NO pueden verse**.
+Un grupo es un conjunto de clientes VPN que pueden comunicarse entre si. Clientes de **diferentes grupos NO pueden verse**.
 
-**Excepciones:**
-- El grupo **Administradores** puede ver y comunicarse con TODOS los clientes
+El grupo **Administradores** es especial: puede ver y acceder a TODOS los clientes de todos los grupos.
 
-### Crear un nuevo grupo
+### Crear un grupo
 
-1. Hacer clic en **+ Nuevo Grupo** en la sección Grupos
-2. Completar el formulario:
-   - **Nombre del grupo**: Ej. "Oficina Buenos Aires", "Cliente ABC"
-   - **Icono**: Seleccionar un icono representativo
-3. Hacer clic en **Crear Grupo**
+1. Click en **+ Nuevo** en la seccion Grupos
+2. Completar:
+   - **Nombre del grupo**: ej. "Schroeder", "WeDo"
+   - **Iniciales**: 1-2 letras para el monograma (ej. "SC", "WD")
+3. Click en **Crear Grupo**
 
-El sistema asignará automáticamente un rango de 254 IPs al nuevo grupo.
+El sistema asigna automaticamente un rango de 254 IPs al grupo.
 
 ### Editar un grupo
 
-1. En la lista de grupos, hacer clic en el botón ✏️ (editar)
-2. Modificar el nombre y/o icono
-3. Hacer clic en **Guardar Cambios**
+1. Click en el icono de lapiz junto al grupo
+2. Modificar nombre y/o iniciales
+3. Click en **Guardar Cambios**
 
-**Nota:** El grupo "Administradores" no puede editarse.
+El grupo Administradores no puede editarse.
 
-### Capacidad de grupos
+### Capacidad
 
-- Cada grupo tiene capacidad para **254 clientes**
-- El sistema soporta hasta **255 grupos**
-- Capacidad total: **64.770 clientes**
+- Cada grupo: **254 clientes**
+- Maximo: **255 grupos**
+- Total: **~65,000 clientes**
 
 ---
 
-## 👥 Gestión de Clientes
+## Gestion de Clientes
 
-### Crear un nuevo cliente
+### Crear un cliente
 
-1. Ir a la sección **➕ Crear Cliente**
-2. Completar el formulario:
-   - **Nombre**: Identificador único (ej: `gw-oficina`, `tecnico-juan`)
-     - Solo letras, números, guiones y guiones bajos
+1. Ir a **Nuevo Cliente**
+2. Completar:
+   - **Nombre**: identificador unico (ej: `000-1-GW001`, `Guille-Admin`)
+     - Solo letras, numeros, guiones y guiones bajos
      - Sin espacios
-   - **Grupo**: Seleccionar el grupo al que pertenecerá
-   - **Contraseña de la CA**: Cualquier valor (la CA no tiene contraseña — campo requerido por el formulario pero no se usa)
-3. Hacer clic en **Crear Cliente**
-4. Esperar a que se genere (puede tardar unos segundos)
-5. Descargar el archivo `.ovpn` haciendo clic en **📥 Descargar .ovpn**
+   - **Grupo**: seleccionar grupo
+3. Click en **Crear Cliente**
+4. Esperar generacion (puede tardar unos segundos)
+5. Descargar el archivo `.ovpn` desde el link que aparece
 
-### Descargar archivo .ovpn de cliente existente
+El certificado del cliente dura **10 anios**.
 
-1. Ir a la sección **📋 Clientes por Grupo**
-2. Expandir el grupo del cliente
-3. Hacer clic en **📥 .ovpn** junto al nombre del cliente
+### Descargar .ovpn de cliente existente
+
+1. Ir a **Clientes por grupo**
+2. Expandir el grupo
+3. Click en **.ovpn** junto al cliente
 
 ### Revocar un cliente
 
-⚠️ **ADVERTENCIA:** Esta acción es **IRREVERSIBLE**. El cliente no podrá volver a conectarse.
+**ADVERTENCIA: Accion IRREVERSIBLE.** El cliente no podra volver a conectarse. La IP queda reservada (no se reasigna).
 
-1. Ir a la sección **⚠️ Revocar Cliente**
-2. Ingresar el **nombre exacto** del cliente
-3. Ingresar la **contraseña de la CA**
-4. Hacer clic en **Revocar**
-5. Confirmar la acción en el diálogo
+1. Ir a **Revocar Cliente**
+2. Ingresar el nombre exacto del cliente
+3. Click en **Revocar**
+4. Confirmar en el dialogo
 
-**Nota:** OpenVPN se reiniciará automáticamente para aplicar los cambios. Las conexiones activas se desconectarán momentáneamente.
+OpenVPN se reinicia automaticamente. Las conexiones activas se desconectan momentaneamente y reconectan solas.
 
 ### Convenciones de nombres sugeridas
 
-| Tipo de cliente | Formato sugerido | Ejemplo |
-|-----------------|------------------|---------|
-| Gateway/Router | `gw-ubicacion` | `gw-oficina-norte` |
-| Usuario | `user-nombre` | `user-juan-perez` |
-| Dispositivo | `dev-tipo-id` | `dev-sensor-001` |
-| Técnico | `tec-nombre` | `tec-carlos` |
+| Tipo | Formato | Ejemplo |
+|------|---------|---------|
+| Gateway | `NNN-G-GWXXX` | `000-1-GW001` (cliente 1, grupo WeDo) |
+| Admin PC | `Nombre-Admin` | `Guille-Admin` |
+| Admin casa | `Nombre-Admin-PC-Casa` | `Guille-Admin-PC-Casa` |
 
 ---
 
-## 📊 Monitoreo
+## Monitoreo
 
-### Clientes Conectados
+### Conexiones activas
 
-Muestra en tiempo real:
-- **Cliente**: Nombre del cliente
-- **Grupo**: Grupo al que pertenece (con icono)
-- **IP VPN**: Dirección IP asignada en la VPN (clickeable)
-- **IP Real**: Dirección IP pública del cliente
-- **Conectado**: Fecha y hora de conexión (hora Argentina)
-- **Tráfico**: Datos enviados y recibidos
+Muestra en tiempo real (auto-refresh cada 30s):
 
-**Actualización automática:** Cada 30 segundos
+| Columna | Descripcion |
+|---------|-------------|
+| Cliente | Nombre del cliente |
+| Grupo | Grupo con monograma |
+| IP VPN | Direccion IP en la VPN (clickeable, abre en nueva ventana) |
+| IP Real | Direccion IP publica del cliente |
+| Conectado | Fecha y hora de conexion (hora Argentina) |
+| Trafico | Datos enviados/recibidos |
 
-**Tip:** La IP VPN permite identificar al cliente en la red privada para acceder a sus interfaces web o servicios internos.
+### Clientes rechazados
 
-### Clientes Rechazados
+Aparece solo si hay intentos bloqueados. Motivos posibles:
+- Certificado revocado
+- Sin archivo CCD valido
+- Credenciales invalidas
 
-Muestra clientes que intentaron conectarse pero fueron bloqueados:
-- **Cliente**: Nombre del cliente rechazado
-- **IP Real**: Desde dónde intentó conectarse
-- **Último Intento**: Cuándo fue el último intento
-- **Motivo**: Por qué fue rechazado (generalmente "Sin archivo CCD")
-
-**¿Por qué aparece un cliente aquí?**
-- El certificado fue revocado
-- El cliente fue creado incorrectamente
-- Alguien está intentando conectarse con credenciales inválidas
-
-### Estados de clientes
-
-En la sección "Clientes por Grupo":
+### Estados
 
 | Badge | Significado |
 |-------|-------------|
-| 🟢 **Online** | Cliente conectado actualmente |
-| ⚪ **Offline** | Cliente no conectado |
+| **Online** (verde) | Conectado |
+| **Offline** (gris) | No conectado |
 
 ---
 
-## ❓ Preguntas Frecuentes
+## Aislamiento de Red
 
-### ¿Cómo sé qué contraseña de CA usar?
+| Desde / Hacia | Mismo grupo | Otro grupo | Admin |
+|---------------|-------------|------------|-------|
+| Cliente normal | SI | NO | NO |
+| Admin | SI | SI | SI |
 
-Es la contraseña que creaste durante la instalación inicial (`./setup.sh`). Si la perdiste, necesitarás reinicializar todo el sistema.
-
-### ¿Puedo mover un cliente a otro grupo?
-
-No directamente. Debes:
-1. Revocar el cliente actual
-2. Crear uno nuevo en el grupo deseado
-3. Distribuir el nuevo archivo .ovpn
-
-### ¿Qué pasa si un grupo se llena?
-
-No podrás crear más clientes en ese grupo. Opciones:
-- Crear un nuevo grupo
-- Revocar clientes que ya no uses
-
-### ¿Por qué un cliente aparece como "Dinámica" en IP VPN?
-
-Esto puede pasar si:
-- El cliente acaba de conectarse y aún no se actualizó la tabla
-- Hay un problema con el archivo CCD
-
-Haz clic en 🔄 para actualizar.
-
-### ¿Cómo accedo a un dispositivo conectado a la VPN?
-
-1. Busca el cliente en "Clientes Conectados"
-2. Haz clic en su IP VPN (ej: `10.8.0.16`)
-3. Se abrirá una nueva pestaña con esa IP
-
-### ¿Por qué se desconectan los clientes al revocar uno?
-
-Al revocar un certificado, OpenVPN necesita reiniciarse para cargar la nueva lista de revocación (CRL). Esto causa una desconexión momentánea de todos los clientes, pero se reconectan automáticamente en segundos.
-
-### ¿Cómo instalo el cliente OpenVPN en un dispositivo?
-
-1. Descargar el archivo `.ovpn` desde el panel
-2. En Windows/Mac: Instalar [OpenVPN Connect](https://openvpn.net/client/)
-3. En Linux: `sudo apt install openvpn`
-4. Importar el archivo `.ovpn`
-5. Conectar
-
-### ¿Los cambios en el panel se reflejan inmediatamente?
-
-- Crear cliente: ✅ Inmediato
-- Revocar cliente: ✅ Inmediato (con reinicio de OpenVPN)
-- Crear grupo: ✅ Inmediato
-- Ver conexiones: ✅ Actualización cada 30 segundos
+- Admin ve todo. Los demas solo ven su grupo.
+- El bloqueo es a nivel de iptables: todo protocolo (ping, SSH, HTTP, etc.).
 
 ---
 
-## 🆘 Soporte
+## Como conectar un dispositivo
 
-Si tienes problemas, contacta al administrador del sistema o revisa la documentación técnica en [README.md](README.md).
+### PC (Windows/Mac)
+
+1. Descargar `.ovpn` desde el panel
+2. Instalar [OpenVPN Connect](https://openvpn.net/client/)
+3. Importar el archivo `.ovpn`
+4. Conectar
+
+### Linux
+
+```bash
+sudo apt install openvpn
+sudo openvpn --config archivo.ovpn
+```
+
+### Gateway Milesight
+
+1. Descargar `.ovpn` desde el panel
+2. En la interfaz web del gateway: Network > VPN > OpenVPN
+3. Subir el archivo `.ovpn` como configuracion
+4. Activar la conexion
+
+### Notas
+
+- La VPN usa **split tunnel**: solo trafico hacia 10.8.x.x va por el VPN. Internet no se ve afectado.
+- Los `.ovpn` incluyen IP local y publica del servidor como dual-remote (si `LOCAL_SERVER_IP` esta configurado).
+- Los certificados duran 10 anios. No hay que renovarlos a corto plazo.
 
 ---
 
-© 2026 WeDo IoT Solutions | Desarrollado por Guillermo Ferrucci
+## Preguntas Frecuentes
+
+### Puedo mover un cliente a otro grupo?
+
+No directamente. Hay que revocar el cliente y crear uno nuevo en el grupo deseado.
+
+### Que pasa si un grupo se llena?
+
+No se pueden crear mas clientes en ese grupo. Crear un nuevo grupo o revocar clientes que no se usen.
+
+### Por que aparece "Dinamica" en IP VPN?
+
+El cliente recien se conecto y la tabla aun no se actualizo. Click en el boton de refresh.
+
+### Por que se desconectan todos al revocar uno?
+
+OpenVPN se reinicia para cargar la nueva lista de revocacion (CRL). Los clientes reconectan automaticamente en segundos.
+
+### Como accedo a un gateway conectado?
+
+1. Buscar el cliente en Conexiones activas
+2. Click en su IP VPN (ej: `10.8.1.1`)
+3. Se abre en nueva ventana — acceder via SSH o interfaz web del gateway
+
+---
+
+WeDo IoT Solutions | Desarrollado por Guillermo Ferrucci
