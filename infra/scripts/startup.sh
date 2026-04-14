@@ -194,10 +194,14 @@ if [ ! -f "$INIT_MARKER" ]; then
     -u "udp://${PUBLIC_IP}" \
     -s "10.8.0.0/16" \
     -e "topology subnet"
-  # ovpn_genconfig agrega "push block-outside-dns" por default.
-  # En split-tunnel (sin redirect-gateway) eso bloquea DNS fuera del
-  # túnel en Windows → parece "sin internet". Lo eliminamos post-gen.
+  # ovpn_genconfig agrega push de DNS y block-outside-dns por default.
+  # En split-tunnel (sin redirect-gateway) eso rompe DNS en Windows:
+  #   - block-outside-dns: bloquea DNS fuera del túnel
+  #   - dhcp-option DNS: pisa el DNS del adaptador Ethernet con el del TAP,
+  #     pero el TAP no tiene ruta a internet → queries DNS se pierden
+  # Eliminamos ambos post-gen. Los clientes usan su DNS local.
   sed -i '/block-outside-dns/d' "${DATA_DIR}/openvpn/openvpn.conf"
+  sed -i '/dhcp-option DNS/d' "${DATA_DIR}/openvpn/openvpn.conf"
   # EASYRSA_BATCH + EASYRSA_REQ_CN evitan que easyrsa build-ca prompte
   # el Common Name en modo non-TTY (error "Failed to build the CA").
   # EASYRSA_CERT_EXPIRE=3650: server cert dura 10 años. Crítico para
