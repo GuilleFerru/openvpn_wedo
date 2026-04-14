@@ -73,6 +73,10 @@ def _export_ovpn_config(name):
     if result.returncode != 0:
         return None
     content = result.stdout.decode()
+    # ovpn_getclient inyecta "redirect-gateway def1" por default (full tunnel).
+    # Lo removemos: solo tráfico hacia la red VPN debe ir por el túnel (split tunnel).
+    # Sin esto, el cliente pierde internet porque todo el tráfico pasa por el VPN.
+    content = re.sub(r'redirect-gateway.*\n?', '', content)
     if LOCAL_SERVER_IP:
         content = re.sub(
             r'remote (\S+) (\d+) (\S+)',
