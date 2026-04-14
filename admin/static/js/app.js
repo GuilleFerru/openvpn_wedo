@@ -378,14 +378,16 @@ async function loadGroups() {
       html += `
         <div class="group-card ${isAdmin ? "admin" : ""}">
           <div class="group-header">
-            <div>
-              <span class="group-icon">${esc(g.icon)}</span>
-              <span class="group-name">${esc(g.name)}</span>
-              ${!isAdmin ? `<button class="btn-edit" data-gid="${id}"><i data-lucide="pencil"></i></button>` : ""}
-            </div>
-            <div style="text-align:right;">
-              <div><strong>${used}</strong> / ${total}</div>
-              <div class="group-range">${esc(g.start_ip)} - ${esc(g.end_ip)}</div>
+            <span class="group-icon">${esc(g.icon)}</span>
+            <div class="group-info">
+              <div class="group-name-row">
+                <span class="group-name">${esc(g.name)}</span>
+                ${!isAdmin ? `<button class="btn-edit" data-gid="${id}"><i data-lucide="pencil"></i></button>` : ""}
+              </div>
+              <div class="group-meta">
+                <span class="group-usage"><strong>${used}</strong>/${total}</span>
+                <span class="group-range">${esc(g.start_ip)} – ${esc(g.end_ip)}</span>
+              </div>
             </div>
           </div>
         </div>
