@@ -1,223 +1,147 @@
-# OpenVPN Admin Panel
+# WeDo VPN Manager
 
-Sistema de administración web para OpenVPN con aislamiento por grupos de clientes.
+Sistema de administracion web para OpenVPN con aislamiento por grupos. Desplegado en GCP con Terraform.
 
-![OpenVPN Admin](https://img.shields.io/badge/OpenVPN-Admin-00d4ff?style=for-the-badge)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge)
-![Flask](https://img.shields.io/badge/Flask-Python-green?style=for-the-badge)
+## Funcionalidades
 
-## 🌟 Características
+- Panel web (Flask + vanilla JS) para gestionar grupos y clientes VPN
+- Aislamiento de red por grupo via iptables (admin ve todo, grupos no se ven entre si)
+- Generacion y descarga de archivos `.ovpn` con certificados de 10 anios
+- Monitoreo de conexiones activas y clientes rechazados en tiempo real
+- Split tunnel: solo trafico VPN pasa por el tunel, internet no se afecta
+- HTTPS automatico con Let's Encrypt via Traefik
+- Persistencia total: datos sobreviven a destroy/recreate de la VM
 
-- **Panel Web Moderno**: Interfaz responsive con tema oscuro
-- **Gestión de Grupos**: Organiza clientes en grupos aislados entre sí
-- **Aislamiento de Red**: Clientes de un grupo solo pueden comunicarse entre ellos
-- **Grupo Admin**: Los administradores pueden ver y comunicarse con todos
-- **IPs Fijas**: Cada cliente recibe una IP fija dentro de su grupo
-- **Descarga .ovpn**: Generación y descarga de archivos de configuración
-- **Seguridad CCD-Exclusive**: Solo clientes con CCD válido pueden conectarse
-- **Monitoreo en Tiempo Real**: Ver clientes conectados y rechazados
-- **Persistencia de Estado**: Las preferencias de UI se mantienen entre recargas
+## Arquitectura
 
-## 📋 Requisitos
+```
+Internet
+  |
+  +-- UDP 1194 ----------> openvpn (kylemanna/openvpn)
+  |                            PKI en /mnt/vpn-data/openvpn
+  |
+  +-- TCP 80/443 ---------> traefik v3.4 (file provider)
+  |                            |
+  |                            +-> openvpn-admin:8080 (Flask + Gunicorn)
+  |                                   |
+  |                                   +-> docker-socket-proxy:2375
+  |
+  +-- TCP 22 (IAP only) --> sshd
+```
 
-- Ubuntu/Debian Server (probado en Ubuntu 22.04)
-- Docker y Docker Compose
-- IP pública fija
-- Puerto 1194/UDP abierto en firewall
-- Puerto 80/443 TCP para el panel admin (vía Caddy, configurable con HTTP_PORT/HTTPS_PORT)
+**Red VPN:** `10.8.0.0/16` — topology subnet
 
-## 🚀 Instalación
+| Grupo | Rango | Notas |
+|-------|-------|-------|
+| Admin (0) | 10.8.0.2 - 10.8.0.254 | Ve todos los grupos. `.1` reservado para server. |
+| Grupo N | 10.8.N.1 - 10.8.N.254 | Solo ve su propio grupo. Hasta 255 grupos. |
 
-### 1. Clonar el repositorio
+## Stack
+
+- **Backend:** Python 3.11, Flask, Gunicorn
+- **Frontend:** Vanilla JS, CSS Clay Dark, Lucide icons, Outfit font
+- **Infra:** GCP (Terraform), Docker Compose, Ubuntu 22.04
+- **Reverse proxy:** Traefik v3.4 + Let's Encrypt (TLS-ALPN-01)
+- **DB:** `clients.json` (archivo JSON en disco persistente)
+
+## Estructura
+
+```
+openvpn_wedo/
++-- admin/
+|   +-- app.py, config.py, db.py, vpn.py, network.py
+|   +-- blueprints/         (auth, groups, clients)
+|   +-- templates/           (index.html, login.html)
+|   +-- static/css/          (style.css)
+|   +-- static/js/           (app.js)
+|   +-- Dockerfile
++-- infra/
+|   +-- *.tf                 (providers, compute, network, firewall, iam, storage)
+|   +-- scripts/startup.sh   (init VM, PKI, volumes, docker compose)
+|   +-- Makefile             (ssh, logs, destroy-vm, apply)
++-- docs/
+|   +-- deploy_status.md     (estado completo del deploy)
+|   +-- ssh_acceso_vm.md     (guia SSH via IAP)
+|   +-- palette.md           (paleta WeDo)
++-- docker-compose.yml
++-- traefik-dynamic.yml
++-- GUIA_USUARIO.md
++-- CLAUDE.md
+```
+
+## Deploy (GCP)
+
+### Requisitos
+
+- `gcloud` CLI autenticado con `roles/owner` en el proyecto
+- Terraform >= 1.6
+- Registro DNS para el dominio (A record -> IP estatica)
+
+### Primer deploy
 
 ```bash
-git clone https://github.com/GuilleFerru/openvpn_wedo.git
-cd openvpn_wedo
+cd infra
+cp terraform.tfvars.example terraform.tfvars
+# Editar terraform.tfvars con passwords y dominio
+
+terraform init
+terraform apply
 ```
 
-### 2. Configurar variables de entorno
+El `startup.sh` se ejecuta automaticamente: instala Docker, clona el repo, monta disco persistente, inicializa PKI (10 anios), levanta los 4 containers.
+
+### Deploy de cambios
 
 ```bash
-cp .env.example .env
-nano .env
+# En la VM:
+cd /opt/vpn && sudo git pull && sudo docker compose up -d --build openvpn-admin
 ```
 
-Editar las variables:
-```env
-ADMIN_PASSWORD=tu_contraseña_segura
-SECRET_KEY=clave_secreta_para_flask
-```
-
-### 3. Dar permisos a los scripts
+### Destroy / Recreate VM (datos persisten)
 
 ```bash
-chmod +x *.sh
+cd infra
+make destroy-vm    # destruye solo la VM
+make apply         # recrea la VM, reattacha disco persistente
 ```
 
-### 4. Inicializar OpenVPN
+### Clean start (wipe total)
 
 ```bash
-./setup.sh <IP_PUBLICA_DEL_SERVIDOR>
+# Wipe disco persistente:
+gcloud compute ssh vpn-prod-vm --zone=us-central1-a --tunnel-through-iap \
+  --command="sudo rm -rf /mnt/vpn-data/.initialized /mnt/vpn-data/openvpn/* /mnt/vpn-data/clients/* /mnt/vpn-data/ccd/* /mnt/vpn-data/letsencrypt/*"
+
+cd infra && make destroy-vm && make apply
 ```
 
-**Ejemplo:**
-```bash
-./setup.sh 200.59.147.112
-```
-
-Durante la inicialización:
-1. Te pedirá crear una **contraseña para la CA** (Autoridad Certificadora)
-2. **¡ANOTALA!** La necesitarás para crear cada cliente
-3. Te pedirá un "Common Name" - podés dejarlo por defecto
-
-### 5. Habilitar CCD Exclusivo (Seguridad)
+## Comandos utiles
 
 ```bash
-./enable-ccd.sh
+# SSH a la VM
+make ssh                    # desde infra/
+
+# Logs
+sudo docker compose -f /opt/vpn/docker-compose.yml logs -f openvpn-admin
+sudo docker compose -f /opt/vpn/docker-compose.yml logs -f openvpn
+
+# Verificar cert HTTPS
+echo | openssl s_client -connect vpn.we-do.io:443 -servername vpn.we-do.io 2>/dev/null | openssl x509 -noout -dates
+
+# Ver cert de un cliente
+sudo docker run -v openvpn_openvpn_data:/etc/openvpn --rm kylemanna/openvpn \
+  openssl x509 -in /etc/openvpn/pki/issued/<CLIENT>.crt -noout -dates
 ```
 
-Esto activa:
-- Solo clientes con archivo CCD pueden conectarse
-- Clientes revocados son bloqueados automáticamente
+## Documentacion
 
-### 6. Iniciar los servicios
+- [Guia de usuario](GUIA_USUARIO.md) — uso del panel admin
+- [Estado del deploy](docs/deploy_status.md) — estado completo, bugs resueltos, lessons learned
+- [Acceso SSH](docs/ssh_acceso_vm.md) — comandos SSH via IAP
 
-```bash
-docker compose up -d
-```
+## Autor
 
-### 7. Acceder al panel
-
-Abrir en el navegador: `http://IP_DEL_SERVIDOR:8888`
-
-Ingresar con la contraseña configurada en `.env`
-
-## 🏗️ Arquitectura de Red (Actualizada a /16)
-
-Debido a limitaciones técnicas de OpenVPN con subredes masivas, se implementó una **Subred /16** que garantiza máxima estabilidad.
-
-```
-Subred: 10.8.0.0/16 (10.8.0.0 - 10.8.255.255)
-
-├── Admin (10.8.0.1 - 10.8.0.254)       → Grupo 0 (Admin)
-├── Grupo 1 (10.8.1.1 - 10.8.1.254)     → Grupo 1
-├── Grupo 2 (10.8.2.1 - 10.8.2.254)     → Grupo 2
-│   ...
-└── Grupo 255 (10.8.255.1 - 10.8.255.254) → Grupo 255
-```
-
-**Capacidad:**
-- **~65,536** IPs totales.
-- **255** Grupos disponibles.
-- **254** Clientes por grupo.
-
-**Lógica de IPs:**
-- La estructura es: `10.8.[GRUPO].[CLIENTE]`
-- **Tercer octeto**: Indica el número de grupo (0-255).
-- **Cuarto octeto**: Indica el cliente (1-254).
-
-**Reglas de comunicación:**
-- ✅ Clientes del mismo grupo pueden verse entre sí.
-- ✅ Admin (Grupo 0) puede ver a todos los clientes.
-- ❌ Clientes de diferentes grupos NO pueden verse.
-
-## 📁 Estructura del Proyecto
-
-```
-openvpn_vdd/
-├── admin/
-│   ├── app.py              # API Flask
-│   ├── Dockerfile
-│   ├── static/
-│   │   ├── css/style.css   # Estilos
-│   │   └── js/app.js       # JavaScript
-│   └── templates/
-│       ├── index.html      # Panel principal
-│       └── login.html      # Página de login
-├── ccd/                    # Client Config Directory
-├── docker-compose.yml      # Orquestación Docker
-├── setup.sh                # Instalación inicial
-├── enable-ccd.sh           # Habilitar seguridad CCD
-├── create-client.sh        # Crear cliente (CLI)
-├── revoke-client.sh        # Revocar cliente (CLI)
-├── list-clients.sh         # Listar clientes (CLI)
-├── .env.example            # Variables de ejemplo
-└── README.md
-```
-
-## 🔧 Comandos Útiles
-
-### Ver logs de OpenVPN
-```bash
-docker logs openvpn -f
-```
-
-### Ver logs del panel admin
-```bash
-docker logs openvpn-admin -f
-```
-
-### Reiniciar servicios
-```bash
-docker compose restart
-```
-
-### Reconstruir después de cambios
-```bash
-docker compose up -d --build
-```
-
-### Ver clientes conectados (CLI)
-```bash
-docker exec openvpn cat /tmp/openvpn-status.log
-```
-
-## 🔒 Seguridad
-
-- **CCD-Exclusive**: Solo clientes con archivo CCD pueden conectarse
-- **Certificados Revocados**: Se bloquean automáticamente
-- **Aislamiento iptables**: Grupos separados a nivel de red
-- **Contraseña CA**: Requerida para crear/revocar clientes
-- **Sesión Flask**: Cookies seguras con secret key
-
-## 🐛 Solución de Problemas
-
-### El panel no carga
-```bash
-docker compose logs openvpn-admin
-```
-
-### Clientes no pueden conectarse
-1. Verificar que el puerto 1194/UDP esté abierto
-2. Verificar que el cliente tenga archivo CCD:
-   ```bash
-   ls -la ccd/
-   ```
-3. Ver logs de OpenVPN:
-   ```bash
-   docker logs openvpn --tail 50
-   ```
-
-### Error "ifconfig-pool conflict"
-```bash
-docker compose down
-docker run -v openvpn_openvpn_data:/etc/openvpn --rm kylemanna/openvpn \
-  sh -c 'sed -i "/^ifconfig-pool/d" /etc/openvpn/openvpn.conf'
-docker compose up -d
-```
-
-## 📖 Documentación
-
-Ver [GUIA_USUARIO.md](GUIA_USUARIO.md) para instrucciones detalladas de uso del panel.
-
-## 📝 Licencia
-
-MIT License
-
-## 👨‍💻 Autor
-
-**Guillermo Ferrucci**  
-WeDo IoT Solutions
+**Guillermo Ferrucci** — WeDo IoT Solutions
 
 ---
 
