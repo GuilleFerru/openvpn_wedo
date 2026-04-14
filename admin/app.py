@@ -31,14 +31,26 @@ def create_app():
     limiter.init_app(app)
 
     @app.after_request
-    def set_csrf_cookie(response):
-        """Expose CSRF token as a JS-readable cookie (not httponly)."""
+    def set_security_headers(response):
+        """Set CSRF cookie + security headers on every response."""
         response.set_cookie(
             'csrf_token',
             generate_csrf(),
             secure=True,
             samesite='Lax',
             httponly=False,
+        )
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' https://unpkg.com; "
+            "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data:; "
+            "connect-src 'self'"
         )
         return response
 

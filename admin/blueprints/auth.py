@@ -1,3 +1,4 @@
+import hmac
 import logging
 from functools import wraps
 
@@ -33,7 +34,7 @@ def login():
         return redirect(url_for('auth.index'))
     error = None
     if request.method == 'POST':
-        if request.form['password'] == ADMIN_PASSWORD:
+        if hmac.compare_digest(request.form['password'], ADMIN_PASSWORD):
             session['logged_in'] = True
             session.permanent = True
             logger.info('login_success', extra={'ip': request.remote_addr})
