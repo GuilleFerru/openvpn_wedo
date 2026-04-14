@@ -30,7 +30,7 @@ __pycache__/
 venv/
 env/
 Lib/
-Scripts/
+/Scripts/
 Include/
 pyvenv.cfg
 .env.local
