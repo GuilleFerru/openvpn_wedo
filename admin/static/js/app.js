@@ -366,7 +366,7 @@ async function loadGroups() {
 
   if (sortedGroups.length === 0) {
     container.innerHTML =
-      '<div class="empty-state"><div class="icon">📁</div><p>No hay grupos creados</p></div>';
+      '<div class="empty-state"><p>No hay grupos creados</p></div>';
   } else {
     let html = "";
     for (const [id, g] of sortedGroups) {
@@ -459,7 +459,7 @@ async function loadClients() {
 
     if (clients.length === 0) {
       html +=
-        '<p style="color:#555;font-size:13px;margin-left:10px;padding:10px;">Sin clientes</p>';
+        '<p class="info-text" style="padding:10px 16px;">Sin clientes</p>';
     } else {
       for (const c of clients) {
         const isOnline = connectedClients.includes(c.name);
@@ -484,7 +484,7 @@ async function loadClients() {
 
   document.getElementById("clientsByGroup").innerHTML =
     html ||
-    '<div class="empty-state"><div class="icon">👥</div><p>No hay clientes</p></div>';
+    '<div class="empty-state"><p>No hay clientes</p></div>';
 
   restoreGroupStates();
   if (typeof lucide !== "undefined") lucide.createIcons();
@@ -513,13 +513,13 @@ async function loadConnected() {
 
   if (d.clients.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="6" style="color:#555;text-align:center;">Sin conexiones activas</td></tr>';
+      '<tr><td colspan="6" style="color:var(--muted-2);text-align:center;padding:20px;">Sin conexiones activas</td></tr>';
   } else {
     tbody.innerHTML = d.clients
       .map((c) => {
         const grpBadge = c.group_name
           ? `<span class="badge badge-group">${esc(c.group_icon)} ${esc(c.group_name)}</span>`
-          : '<span style="color:#666">-</span>';
+          : '<span style="color:var(--muted-2)">-</span>';
         // VPN IP: link only when it looks like a real IPv4 (prevents href injection)
         const rawVpnIp = c.vpn_ip || "";
         const isRealIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(rawVpnIp);
@@ -528,12 +528,12 @@ async function loadConnected() {
           : `<span class="vpn-ip-dynamic">Dinámica</span>`;
         return `
           <tr>
-            <td><strong>${esc(c.name)}</strong></td>
-            <td>${grpBadge}</td>
-            <td style="font-family:monospace">${vpnIpCell}</td>
-            <td style="font-family:monospace;color:#888">${esc(c.real_ip)}</td>
-            <td style="color:#888;font-size:12px">${esc(c.connected_since)}</td>
-            <td style="font-size:12px">↓${esc(c.bytes_recv)} ↑${esc(c.bytes_sent)}</td>
+            <td class="td-name" data-label="Cliente"><strong>${esc(c.name)}</strong></td>
+            <td class="td-group" data-label="Grupo">${grpBadge}</td>
+            <td class="td-vpn-ip" data-label="IP VPN">${vpnIpCell}</td>
+            <td class="td-real-ip" data-label="IP Real">${esc(c.real_ip)}</td>
+            <td class="td-since" data-label="Conectado">${esc(c.connected_since)}</td>
+            <td class="td-traffic" data-label="Tráfico">↓${esc(c.bytes_recv)} ↑${esc(c.bytes_sent)}</td>
           </tr>
         `;
       })
@@ -565,11 +565,11 @@ async function loadRejected() {
     tbody.innerHTML = d.clients
       .map(
         (c) => `
-        <tr style="background: rgba(255,77,77,0.1);">
-          <td><strong style="color:#ff6b6b;">${esc(c.name)}</strong></td>
-          <td style="font-family:monospace;color:#888">${esc(c.real_ip)}</td>
-          <td style="color:#888;font-size:12px">${esc(c.last_attempt)}</td>
-          <td style="color:#ff6b6b;font-size:12px">${esc(c.reason)}</td>
+        <tr class="rejected-row">
+          <td class="td-name" data-label="Cliente"><strong>${esc(c.name)}</strong></td>
+          <td class="td-real-ip" data-label="IP Real">${esc(c.real_ip)}</td>
+          <td class="td-since" data-label="Último intento">${esc(c.last_attempt)}</td>
+          <td class="td-traffic" data-label="Motivo" style="color:var(--danger);font-size:12px">${esc(c.reason)}</td>
         </tr>
       `,
       )
