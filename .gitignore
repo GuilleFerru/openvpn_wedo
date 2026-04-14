@@ -1,8 +1,5 @@
-# Archivos de clientes (contienen credenciales)
-clients/*.ovpn
-
-# Mantener la carpeta clients
-!clients/.gitkeep
+# Directorio de clientes completo (vive en disco persistente, symlinked por startup.sh)
+clients/
 
 # Variables de entorno (contienen contraseñas)
 .env
@@ -39,9 +36,8 @@ pyvenv.cfg
 dist/
 build/
 
-# CCD (configuraciones de clientes - contienen IPs asignadas)
-ccd/*
-!ccd/.gitkeep
+# CCD completo (vive en disco persistente, symlinked por startup.sh)
+ccd/
 
 # Logs
 *.log
