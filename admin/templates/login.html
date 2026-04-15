@@ -5,29 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" href="/static/img/favicon.png" />
     <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="/static/js/lucide.min.js"></script>
   </head>
   <body class="login-page">
     <div class="login-box">
-      <div class="login-header">
-        <div class="login-wordmark">WeDo <span>VPN</span></div>
-        <div class="login-sub">Panel de Administración</div>
+      <div class="login-brand">
+        <img src="/static/img/wedo-logo.png" alt="WeDo" class="login-logo" />
+        <span class="login-vpn">VPN</span>
       </div>
+      <div class="login-divider"></div>
       <div class="login-body">
+        <div class="login-lock"><i data-lucide="lock-keyhole"></i></div>
+        <p class="login-sub">Panel de Administración</p>
         <form method="POST">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-          <input
-            type="password"
-            name="password"
-            placeholder="Contraseña"
-            required
-            autofocus
-          />
-          <button type="submit">Ingresar</button>
+          <div class="login-input-wrap">
+            <i data-lucide="key-round" class="login-input-icon"></i>
+            <input
+              type="password"
+              name="password"
+              placeholder="Contraseña"
+              required
+              autofocus
+            />
+          </div>
+          <button type="submit"><i data-lucide="log-in" style="width:14px;height:14px;vertical-align:middle;margin-right:6px;"></i>Ingresar</button>
         </form>
         {% if error %}
-        <p class="login-error">{{ error }}</p>
+        <p class="login-error"><i data-lucide="alert-circle" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>{{ error }}</p>
         {% endif %}
       </div>
+      <div class="login-footer">
+        <i data-lucide="shield-check" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;opacity:0.5;"></i>Conexión segura via HTTPS
+      </div>
     </div>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
   </body>
 </html>
