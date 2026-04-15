@@ -197,10 +197,21 @@ a { color: inherit; text-decoration: none; }
 }
 
 .brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--text);
+}
+.brand-img {
+  height: 20px;
+  width: auto;
+  display: block;
+}
+[data-theme="light"] .brand-img {
+  filter: brightness(0);
 }
 .brand-logo span { color: var(--orange); }
 

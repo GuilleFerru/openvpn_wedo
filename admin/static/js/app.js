@@ -85,6 +85,7 @@ function restoreSectionStates() {
     { id: "connectedSection", defaultCollapsed: true },
     { id: "rejectedSection", defaultCollapsed: true },
     { id: "clientsSection", defaultCollapsed: false },
+    { id: "groupsSection", defaultCollapsed: false },
   ];
 
   sections.forEach(({ id, defaultCollapsed }) => {
