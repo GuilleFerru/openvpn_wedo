@@ -1,4 +1,5 @@
 import os
+import re
 import threading
 
 
@@ -14,7 +15,9 @@ def require_env(name):
 # Paths & credentials
 # =============================================================================
 
-VOLUME_NAME    = os.environ.get('VOLUME_NAME', 'openvpn_openvpn_data')
+VOLUME_NAME = os.environ.get('VOLUME_NAME', 'openvpn_openvpn_data')
+if not re.match(r'^[a-zA-Z0-9_-]+$', VOLUME_NAME):
+    raise RuntimeError(f"VOLUME_NAME contains invalid characters: {VOLUME_NAME}")
 CLIENTS_DIR    = os.environ.get('CLIENTS_DIR', '/app/clients')
 CCD_DIR        = os.environ.get('CCD_DIR', '/app/ccd')
 CLIENTS_DB     = os.path.join(CLIENTS_DIR, 'clients.json')

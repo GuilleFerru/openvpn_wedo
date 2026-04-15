@@ -43,7 +43,9 @@ def get_groups():
 def create_group():
     data = request.json
     name = data.get('name', '').strip()
-    icon = data.get('icon', '🏢')
+    icon = data.get('icon', 'AB')[:2].upper()
+    if not re.match(r'^[A-Z]{1,2}$', icon):
+        icon = 'AB'
 
     if not name:
         return jsonify({'success': False, 'error': 'Nombre requerido'})
@@ -91,7 +93,9 @@ def create_group():
 def update_group(group_id):
     data = request.json
     name = data.get('name', '').strip()
-    icon = data.get('icon', '🏢')
+    icon = data.get('icon', 'AB')[:2].upper()
+    if not re.match(r'^[A-Z]{1,2}$', icon):
+        icon = 'AB'
 
     if not name:
         return jsonify({'success': False, 'error': 'Nombre requerido'})

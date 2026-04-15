@@ -7,6 +7,7 @@ from flask import Blueprint, request, jsonify, send_file
 
 from config import CLIENTS_DIR, VOLUME_NAME, CLIENTS_PER_GROUP, db_lock
 from db import load_clients_db, save_clients_db
+from extensions import limiter
 from network import group_client_to_ip, utc_to_argentina, format_bytes
 from vpn import _write_ccd, _remove_ccd, _cleanup_client_files, _run_easyrsa_build, _export_ovpn_config
 from .auth import login_required
@@ -156,6 +157,7 @@ def rejected_clients():
 
 @bp.route('/api/create', methods=['POST'])
 @login_required
+@limiter.limit('10 per minute')
 def create_client():
     data     = request.json
     name     = data.get('name', '').strip()
@@ -223,6 +225,7 @@ def create_client():
 
 @bp.route('/api/revoke', methods=['POST'])
 @login_required
+@limiter.limit('5 per minute')
 def revoke_client():
     data     = request.json
     name     = data.get('name', '').strip()
