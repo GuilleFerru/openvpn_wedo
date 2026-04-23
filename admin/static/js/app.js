@@ -259,6 +259,36 @@ document.getElementById("createGroupForm").onsubmit = async (e) => {
   }
 };
 
+// ============================================
+// Model → daemon hint (dinámico al elegir modelo en el form)
+// ============================================
+const MODEL_TO_DAEMON = {
+  UG67: "classic", UG65: "classic", UG56: "classic",
+  Desktop: "classic", Other: "classic",
+  UG63v2: "modern",
+};
+const DAEMON_META = {
+  classic: { port: 1194, subnet: "10.8.x.x" },
+  modern:  { port: 1195, subnet: "10.9.x.x" },
+};
+
+function updateDaemonHint() {
+  const model = document.getElementById("clientModel").value;
+  const daemon = MODEL_TO_DAEMON[model] || "classic";
+  const meta = DAEMON_META[daemon];
+  const hint = document.getElementById("daemonHint");
+  if (!hint) return;
+  // Render via DOM para evitar XSS — model viene del dropdown pero por paranoia.
+  hint.textContent = "Daemon ";
+  const badge = document.createElement("span");
+  badge.className = `badge badge-${daemon}`;
+  badge.textContent = daemon;
+  hint.append(badge, ` — puerto ${meta.port}, subred ${meta.subnet}`);
+}
+
+const modelSelect = document.getElementById("clientModel");
+if (modelSelect) modelSelect.addEventListener("change", updateDaemonHint);
+
 document.getElementById("createForm").onsubmit = async (e) => {
   e.preventDefault();
   const status = document.getElementById("createStatus");
@@ -275,6 +305,7 @@ document.getElementById("createForm").onsubmit = async (e) => {
     body: JSON.stringify({
       name: document.getElementById("clientName").value,
       group: document.getElementById("clientGroup").value,
+      model: document.getElementById("clientModel").value,
     }),
   });
   const d = await r.json();
@@ -426,6 +457,13 @@ async function loadClients() {
 
   document.getElementById("clientsCount").textContent = d.clients.length;
 
+  // Stat 4: Modern / Total — cuántos clientes van al daemon2.
+  const modernCount = d.clients.filter((c) => c.daemon === "modern").length;
+  const modernRatioEl = document.getElementById("modernRatio");
+  if (modernRatioEl) {
+    modernRatioEl.textContent = `${modernCount}/${d.clients.length}`;
+  }
+
   const byGroup = {};
   for (const c of d.clients) {
     const gid = c.group || "sin-grupo";
@@ -469,12 +507,19 @@ async function loadClients() {
         const badge = isOnline
           ? '<span class="badge badge-online">● Online</span>'
           : '<span class="badge badge-offline">○ Offline</span>';
+        const daemon = c.daemon === "modern" ? "modern" : "classic";
+        const modelBadge = c.model
+          ? `<span class="badge badge-model">${esc(c.model)}</span>`
+          : "";
+        const daemonBadge = `<span class="badge badge-${daemon}">${daemon}</span>`;
 
         html += `
           <div class="client-row">
             <div>
               <span class="client-name">${esc(c.name)}</span>
               <span class="client-ip">${esc(c.ip || "IP dinámica")}</span>
+              ${modelBadge}
+              ${daemonBadge}
               ${badge}
             </div>
             <a href="/download/${encodeURIComponent(c.name)}" class="btn-small btn-secondary"><i data-lucide="download" style="width:12px;height:12px;vertical-align:middle;margin-right:3px;"></i>.ovpn</a>
@@ -516,7 +561,7 @@ async function loadConnected() {
 
   if (d.clients.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="6" style="color:var(--muted-2);text-align:center;padding:20px;">Sin conexiones activas</td></tr>';
+      '<tr><td colspan="7" style="color:var(--muted-2);text-align:center;padding:20px;">Sin conexiones activas</td></tr>';
   } else {
     tbody.innerHTML = d.clients
       .map((c) => {
@@ -529,12 +574,15 @@ async function loadConnected() {
         const vpnIpCell = isRealIp
           ? `<a href="http://${esc(rawVpnIp)}" target="_blank" rel="noopener noreferrer" class="vpn-ip-link">${esc(rawVpnIp)}</a>`
           : `<span class="vpn-ip-dynamic">Dinámica</span>`;
+        const daemon = c.daemon === "modern" ? "modern" : "classic";
+        const daemonBadge = `<span class="badge badge-${daemon}">${daemon}</span>`;
         return `
           <tr>
             <td class="td-name" data-label="Cliente"><strong>${esc(c.name)}</strong></td>
             <td class="td-group" data-label="Grupo">${grpBadge}</td>
             <td class="td-vpn-ip" data-label="IP VPN">${vpnIpCell}</td>
             <td class="td-real-ip" data-label="IP Real">${esc(c.real_ip)}</td>
+            <td class="td-daemon" data-label="Daemon">${daemonBadge}</td>
             <td class="td-since" data-label="Conectado">${esc(c.connected_since)}</td>
             <td class="td-traffic" data-label="Tráfico">↓${esc(c.bytes_recv)} ↑${esc(c.bytes_sent)}</td>
           </tr>

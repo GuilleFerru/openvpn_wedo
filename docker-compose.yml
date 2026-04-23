@@ -63,6 +63,7 @@ services:
     volumes:
       - ./clients:/app/clients
       - ./ccd:/app/ccd
+      - ./ccd-modern:/app/ccd-modern
     depends_on:
       - openvpn
       - openvpn-modern

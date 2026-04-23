@@ -333,6 +333,13 @@ a { color: inherit; text-decoration: none; }
   background: linear-gradient(145deg, #2dba70 0%, #219754 100%);
   box-shadow: var(--shadow-stat-green);
 }
+.stat-card.mint {
+  background: linear-gradient(145deg, #4DB8A0 0%, #2E8B78 100%);
+  box-shadow: var(--shadow-clay);
+}
+.stat-card.mint .stat-num,
+.stat-card.mint .stat-lbl { color: #fff; }
+.stat-card.mint .stat-lbl { color: rgba(255,255,255,0.78); }
 
 .stat-num {
   font-size: 28px;
@@ -760,6 +767,24 @@ tr.rejected-row td.td-name { color: var(--danger); }
 .badge-group {
   background: var(--surface-3);
   color: var(--muted);
+}
+/* Dos daemons: classic (gris neutro) y modern (mint pastel, distinto de online). */
+.badge-classic {
+  background: var(--surface-3);
+  color: var(--muted-2);
+  letter-spacing: 0.04em;
+}
+.badge-modern {
+  background: rgba(110, 231, 183, 0.15);
+  color: #8FE5C3;
+  letter-spacing: 0.04em;
+}
+/* Para "UG67" / "UG63v2" junto al nombre — etiqueta discreta */
+.badge-model {
+  background: var(--surface-3);
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.03em;
 }
 
 /* ============================================================

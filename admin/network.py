@@ -4,39 +4,43 @@ No side-effects; no Flask dependencies.
 """
 
 from datetime import datetime, timedelta
-from config import VPN_SECOND_OCTET_START
+from config import VPN_SECOND_OCTET_START, DAEMON_CONFIG
 
 
-def group_id_to_octets(group_num):
+def group_id_to_octets(group_num, daemon='classic'):
     """
     Group number → (second_octet, third_octet).
-    Group 0 (Admin) → (8, 0), Group 255 → (8, 255)
+    daemon='classic': (8, N)  — daemon1 / UG67
+    daemon='modern':  (9, N)  — daemon2 / UG63v2
     """
-    return VPN_SECOND_OCTET_START, group_num
+    return DAEMON_CONFIG[daemon]['second_octet'], group_num
 
 
 def octets_to_group_id(second_octet, third_octet):
     """
     (second_octet, third_octet) → group number.
-    (8, X) → X
+    Acepta 8.x (classic) y 9.x (modern). Si no matchea ninguno, admin (0).
     """
-    if second_octet != VPN_SECOND_OCTET_START:
+    classic = DAEMON_CONFIG['classic']['second_octet']
+    modern  = DAEMON_CONFIG['modern']['second_octet']
+    if second_octet not in (classic, modern):
         return 0
     return third_octet
 
 
-def group_client_to_ip(group_num, client_num):
+def group_client_to_ip(group_num, client_num, daemon='classic'):
     """
     Group + client number → full IP.
-    (1, 47) → '10.8.1.47'
+    (1, 47, 'classic') → '10.8.1.47'
+    (8, 1, 'modern')   → '10.9.8.1'
     """
-    return f"10.{VPN_SECOND_OCTET_START}.{group_num}.{client_num}"
+    return f"10.{DAEMON_CONFIG[daemon]['second_octet']}.{group_num}.{client_num}"
 
 
 def ip_to_group_client(ip_str):
     """
     IP string → (group_num, client_num).
-    '10.8.1.47' → (1, 47)
+    '10.8.1.47' → (1, 47), '10.9.8.1' → (8, 1)
     Returns (None, None) on parse error.
     """
     parts = ip_str.split('.')
@@ -51,12 +55,29 @@ def ip_to_group_client(ip_str):
         return None, None
 
 
-def get_group_ip_range(group_num):
+def ip_to_daemon(ip_str):
     """
-    Group number → (start_ip, end_ip).
-    1 → ('10.8.1.1', '10.8.1.254')
+    IP string → 'classic' o 'modern' basado en segundo octeto. Default classic.
     """
-    s = VPN_SECOND_OCTET_START
+    parts = ip_str.split('.')
+    if len(parts) < 2:
+        return 'classic'
+    try:
+        second = int(parts[1])
+    except ValueError:
+        return 'classic'
+    if second == DAEMON_CONFIG['modern']['second_octet']:
+        return 'modern'
+    return 'classic'
+
+
+def get_group_ip_range(group_num, daemon='classic'):
+    """
+    Group number → (start_ip, end_ip) para el daemon pedido.
+    (1, 'classic') → ('10.8.1.1', '10.8.1.254')
+    (1, 'modern')  → ('10.9.1.1', '10.9.1.254')
+    """
+    s = DAEMON_CONFIG[daemon]['second_octet']
     return f"10.{s}.{group_num}.1", f"10.{s}.{group_num}.254"
 
 
