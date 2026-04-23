@@ -20,27 +20,32 @@ services:
     image: kylemanna/openvpn
     container_name: openvpn
     restart: always
-    ports:
-      - "1194:1194/udp"
+    # network_mode: host — necesario para que tun0 (daemon1) y tun1 (daemon2)
+    # vivan en el netns del host y el kernel pueda rutear entre ambas subnets
+    # (10.8/16 <-> 10.9/16). Las reglas iptables las maneja
+    # infra/scripts/openvpn-iptables.sh en el host (chain OPENVPN_FWD).
+    network_mode: host
     cap_add:
       - NET_ADMIN
     volumes:
       - openvpn_openvpn_data:/etc/openvpn
       - ./ccd:/etc/openvpn/ccd
-    sysctls:
-      - net.ipv4.ip_forward=1
-    command: >
-      sh -c "
-        iptables -F FORWARD;
-        iptables -P FORWARD DROP;
-        iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT;
-        iptables -A FORWARD -i tun0 -o tun0 -s 10.8.0.0/24 -j ACCEPT;
-        for i in $$(seq 1 255); do iptables -A FORWARD -i tun0 -o tun0 -s 10.8.$$i.0/24 -d 10.8.$$i.0/24 -j ACCEPT; done;
-        iptables -A FORWARD -i tun0 -o tun0 -j DROP;
-        iptables -A FORWARD -i tun0 -o eth0 -j ACCEPT;
-        iptables -A FORWARD -i eth0 -o tun0 -m state --state ESTABLISHED,RELATED -j ACCEPT;
-        ovpn_run
-      "
+    command: ovpn_run --config /etc/openvpn/openvpn.conf
+
+  openvpn-modern:
+    # Segundo daemon para clientes OpenVPN 2.5+ (UG63v2 y futuros) que no
+    # soportan comp-lzo. PKI compartida con daemon1 (mismo volumen), subnet
+    # 10.9.0.0/16, puerto 1195, tun1. Ver docs/plan_2_daemons_ug63.md.
+    image: kylemanna/openvpn
+    container_name: openvpn-modern
+    restart: always
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - openvpn_openvpn_data:/etc/openvpn
+      - ./ccd-modern:/etc/openvpn/ccd-modern
+    command: ovpn_run --config /etc/openvpn/openvpn-modern.conf --client-config-dir /etc/openvpn/ccd-modern
 
   openvpn-admin:
     build: ./admin
@@ -60,6 +65,7 @@ services:
       - ./ccd:/app/ccd
     depends_on:
       - openvpn
+      - openvpn-modern
       - docker-socket-proxy
     networks:
       - admin_net
