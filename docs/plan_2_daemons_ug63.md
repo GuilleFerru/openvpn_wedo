@@ -768,16 +768,111 @@ Ver código completo en §5.2.
 
 **Disparador:** Fase 1 tests fallan (UG67 no conectan, Docker roto, ambos daemons inestables).
 
-**Pasos:**
-1. `sudo docker compose -f /opt/vpn/docker-compose.yml down`
-2. Restaurar `/opt/vpn/docker-compose.yml` desde backup o `git checkout master -- docker-compose.yml`.
-3. Restaurar iptables: `sudo iptables-restore < /tmp/iptables-pre-phase1.rules`.
-4. Restaurar `openvpn.conf` si se modificó: `sudo cp /mnt/vpn-data/openvpn/openvpn.conf.bak-phase1 /mnt/vpn-data/openvpn/openvpn.conf`.
-5. `sudo docker compose up -d`.
-6. Verificar UG67 reconectan a 1194.
-7. `openvpn-modern.conf` y `ccd-modern/` pueden quedar en disco — inofensivos si el container no corre.
+**Prerrequisitos (obligatorio ANTES de 1b — sin esto el rollback pierde datos):**
 
-Downtime esperado en rollback: 3-5min.
+```bash
+# En la VM:
+sudo iptables-save > /tmp/iptables-pre-phase1.rules
+sudo cp /mnt/vpn-data/openvpn/openvpn.conf /mnt/vpn-data/openvpn/openvpn.conf.bak-phase1
+sudo cp /opt/vpn/docker-compose.yml /opt/vpn/docker-compose.yml.bak-phase1
+
+# "Boton rojo" opcional — snapshot completo del disco de datos:
+gcloud compute disks snapshot vpn-prod-data \
+  --snapshot-names=pre-phase1-$(date +%Y%m%d%H%M) \
+  --zone=us-central1-a
+```
+
+**Pasos rollback (~3-5min downtime):**
+
+1. **Bajar ambos containers:**
+   ```bash
+   cd /opt/vpn && sudo docker compose down
+   ```
+
+2. **Desenganchar y borrar chain iptables host + restaurar backup:**
+   ```bash
+   sudo iptables -D FORWARD -j OPENVPN_FWD 2>/dev/null || true
+   sudo iptables -F OPENVPN_FWD 2>/dev/null || true
+   sudo iptables -X OPENVPN_FWD 2>/dev/null || true
+   sudo iptables-restore < /tmp/iptables-pre-phase1.rules
+   ```
+
+3. **Deshabilitar systemd unit (evita re-ejecucion en reboot):**
+   ```bash
+   sudo systemctl disable --now openvpn-iptables.service
+   sudo rm -f /etc/systemd/system/openvpn-iptables.service
+   sudo systemctl daemon-reload
+   ```
+
+4. **Rollback codigo del repo a master:**
+   ```bash
+   cd /opt/vpn && sudo git checkout master
+   ```
+
+5. **Restaurar `openvpn.conf` desde backup** (las routes `10.9.0.0` viven en el volumen, no en el repo — `git checkout` no las toca):
+   ```bash
+   sudo cp /mnt/vpn-data/openvpn/openvpn.conf.bak-phase1 /mnt/vpn-data/openvpn/openvpn.conf
+   ```
+
+6. **Archivos muertos (opcional — no molestan si se dejan):**
+   ```bash
+   sudo rm -f /mnt/vpn-data/openvpn/openvpn-modern.conf
+   sudo rm -rf /mnt/vpn-data/ccd-modern
+   sudo rm -f /opt/vpn/ccd-modern  # symlink
+   ```
+
+7. **Levantar servicios con master:**
+   ```bash
+   cd /opt/vpn && sudo docker compose up -d
+   ```
+
+8. **Verificar:**
+   ```bash
+   sudo docker ps --filter name=openvpn
+   sudo docker logs openvpn --tail 20 | grep 'Initialization Sequence Completed'
+   sleep 60
+   sudo docker exec openvpn cat /tmp/openvpn-status.log | grep CLIENT_LIST
+   sudo ping -c 3 10.8.1.1   # cualquier UG67 conocido
+   ```
+
+**Limpieza opcional de infra extra** (no rompen nada si se dejan):
+
+```bash
+# En local, revertir firewall GCP:
+cd infra && terraform plan   # veras: destruira vpn_udp_modern
+terraform apply              # si queres efectivo
+
+# En VM, quitar ufw 1195:
+sudo ufw delete allow 1195/udp
+```
+
+**Casos rapidos:**
+
+| Sintoma 1b | Accion rapida |
+|---|---|
+| UG67 no reconecta al 1194 | Pasos 1-8 |
+| Docker roto, otros containers caidos (traefik/admin) | Empezar por paso 2 (iptables) — suele ser la causa |
+| Solo daemon2 roto pero daemon1 OK | No rollback total: `sudo docker compose stop openvpn-modern` y seguir con Fase 2 desactivada |
+| VM no bootea tras reboot | Restaurar desde snapshot GCP (`gcloud compute disks restore-snapshot`) |
+
+---
+
+### 12.1.1 Nota critica — Terraform apply NO replace la VM
+
+`metadata_startup_script` en `google_compute_instance` tiene `ForceNew` — cualquier edit a `infra/scripts/startup.sh` disparaba replace completo de la VM (downtime 10-20min, pierde boot disk). Fase 1 incluye fix en `infra/compute.tf`:
+
+```hcl
+lifecycle {
+  ignore_changes = [
+    metadata_startup_script,
+    boot_disk[0].initialize_params[0].image,
+  ]
+}
+```
+
+Con este fix, `terraform apply` en Fase 1 **solo** crea la regla firewall `vpn_udp_modern`. No toca la VM.
+
+**Tradeoff aceptado:** cambios futuros a `startup.sh` no se propagan via Terraform — hay que aplicarlos manual via SSH en la VM ya bootstrapped, o forzar con `terraform taint google_compute_instance.vpn_vm` seguido de apply (destruye VM nueva). El flujo real ya es SSH-y-aplicar, asi que el tradeoff es correcto.
 
 ### 12.2 Rollback Fase 2
 
