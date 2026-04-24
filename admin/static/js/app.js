@@ -180,9 +180,19 @@ async function showCreateGroupModal() {
   showModal("modalCreateGroup");
   const r = await fetch("/api/next-group-range");
   const d = await r.json();
-  document.getElementById("groupRangePreview").textContent = d.available
-    ? `${d.start_ip} - ${d.end_ip}`
-    : "No hay más rangos disponibles";
+  const preview = document.getElementById("groupRangePreview");
+  if (!d.available) {
+    preview.textContent = "No hay más rangos disponibles";
+  } else {
+    // Nuevo grupo → mostrar ambos rangos (classic 10.8.x, modern 10.9.x)
+    preview.textContent = "";
+    const c = document.createElement("span");
+    c.innerHTML = `<span class="badge badge-classic">classic</span> ${esc(d.classic_start)} – ${esc(d.classic_end)}`;
+    const br = document.createElement("br");
+    const m = document.createElement("span");
+    m.innerHTML = `<span class="badge badge-modern">modern</span> ${esc(d.modern_start)} – ${esc(d.modern_end)}`;
+    preview.append(c, br, m);
+  }
 }
 
 // ============================================
@@ -402,9 +412,25 @@ async function loadGroups() {
   } else {
     let html = "";
     for (const [id, g] of sortedGroups) {
-      const used = g.client_count || 0;
       const total = g.capacity || 254;
+      const classicCount = g.classic_count || 0;
+      const modernCount  = g.modern_count  || 0;
       const isAdmin = g.is_system || g.can_see_all;
+      const mixed = classicCount > 0 && modernCount > 0;
+
+      // Usage: si el grupo es mixto, mostrar breakdown; si no, la cuenta simple.
+      const usageCell = mixed
+        ? `<strong>${classicCount}</strong><span class="badge badge-classic">classic</span> + <strong>${modernCount}</strong><span class="badge badge-modern">modern</span> / ${total} c/u`
+        : modernCount > 0
+          ? `<strong>${modernCount}</strong>/${total} <span class="badge badge-modern">modern</span>`
+          : `<strong>${classicCount}</strong>/${total}${classicCount > 0 ? ' <span class="badge badge-classic">classic</span>' : ''}`;
+
+      // Range: si mixto, mostrar ambos. Si no, el que corresponda.
+      const rangeCell = mixed
+        ? `${esc(g.classic_start)}–${esc(g.classic_end.split(".").pop())} · ${esc(g.modern_start)}–${esc(g.modern_end.split(".").pop())}`
+        : modernCount > 0
+          ? `${esc(g.modern_start)} – ${esc(g.modern_end)}`
+          : `${esc(g.start_ip)} – ${esc(g.end_ip)}`;
 
       // id is always [a-z0-9-] so safe as data attribute value and in class
       html += `
@@ -417,8 +443,8 @@ async function loadGroups() {
                 ${!isAdmin ? `<button class="btn-edit" data-gid="${id}"><i data-lucide="pencil"></i></button>` : ""}
               </div>
               <div class="group-meta">
-                <span class="group-usage"><strong>${used}</strong>/${total}</span>
-                <span class="group-range">${esc(g.start_ip)} – ${esc(g.end_ip)}</span>
+                <span class="group-usage">${usageCell}</span>
+                <span class="group-range">${rangeCell}</span>
               </div>
             </div>
           </div>

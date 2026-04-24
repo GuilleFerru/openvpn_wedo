@@ -21,19 +21,34 @@ def get_groups():
     groups  = db.get('groups', {})
     clients = db.get('clients', {})
 
-    # Count clients with existing .ovpn files per group
-    client_count = {}
+    # Clientes por grupo y por daemon — soporta grupos con UG67+UG63 mezclados.
+    counts_by_daemon = {}
     for name, info in clients.items():
         gid = info.get('group')
+        daemon = info.get('daemon', 'classic')
         if gid and os.path.exists(f'{CLIENTS_DIR}/{name}.ovpn'):
-                client_count[gid] = client_count.get(gid, 0) + 1
+            c = counts_by_daemon.setdefault(gid, {'classic': 0, 'modern': 0})
+            c[daemon] = c.get(daemon, 0) + 1
 
     for gid, g in groups.items():
-        start_ip, end_ip = get_group_ip_range(g.get('group_num', 0))
-        g['start_ip']     = start_ip
-        g['end_ip']       = end_ip
-        g['capacity']     = CLIENTS_PER_GROUP
-        g['client_count'] = client_count.get(gid, 0)
+        group_num = g.get('group_num', 0)
+        c_start, c_end = get_group_ip_range(group_num, 'classic')
+        m_start, m_end = get_group_ip_range(group_num, 'modern')
+        counts = counts_by_daemon.get(gid, {'classic': 0, 'modern': 0})
+
+        # Campos legacy (start_ip/end_ip, capacity, client_count) — UI vieja.
+        g['start_ip']      = c_start
+        g['end_ip']        = c_end
+        g['capacity']      = CLIENTS_PER_GROUP
+        g['client_count']  = counts['classic'] + counts['modern']
+
+        # Campos per-daemon — UI nueva puede mostrar breakdown.
+        g['classic_start'] = c_start
+        g['classic_end']   = c_end
+        g['modern_start']  = m_start
+        g['modern_end']    = m_end
+        g['classic_count'] = counts['classic']
+        g['modern_count']  = counts['modern']
 
     return jsonify({'groups': groups})
 
@@ -125,12 +140,15 @@ def get_next_group_range():
     if next_group_num > MAX_GROUPS:
         return jsonify({'available': False, 'reason': 'Máximo de grupos alcanzado (255)'})
 
-    start_ip, end_ip = get_group_ip_range(next_group_num)
+    c_start, c_end = get_group_ip_range(next_group_num, 'classic')
+    m_start, m_end = get_group_ip_range(next_group_num, 'modern')
     return jsonify({
         'available': True,
         'group_num': next_group_num,
-        'start_ip': start_ip,
-        'end_ip': end_ip,
+        'start_ip':  c_start,   # legacy — clasicca por default
+        'end_ip':    c_end,
+        'classic_start': c_start, 'classic_end': c_end,
+        'modern_start':  m_start, 'modern_end':  m_end,
         'capacity': CLIENTS_PER_GROUP,
         'remaining_groups': MAX_GROUPS - next_group_num + 1,
     })
