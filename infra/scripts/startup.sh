@@ -242,21 +242,24 @@ if [ ! -f "$DAEMON2_CONF" ]; then
   # Clientes OpenVPN 2.5+ rechazan comp-lzo — borramos todo rastro.
   sed -i '/^comp-lzo/d' "$DAEMON2_CONF"
   sed -i '/^push "comp-lzo/d' "$DAEMON2_CONF"
-  # Route cross-subnet: daemon2 rutea 10.8 via daemon1 (push al cliente + route en server).
-  echo 'route 10.8.0.0 255.255.0.0' >> "$DAEMON2_CONF"
+  # Push de ruta cross-subnet al cliente. NO agregamos `route 10.8.0.0` bare
+  # porque colisionaria con la kernel route que el propio daemon1 crea al tener
+  # tun0 en el netns del host (dos rutas para 10.8/16 → kernel rompe paths).
   echo 'push "route 10.8.0.0 255.255.0.0"' >> "$DAEMON2_CONF"
   echo "  openvpn-modern.conf generado"
 else
   echo "  openvpn-modern.conf ya existe, saltando"
 fi
 
-# Agregar route cross-subnet a daemon1 si no esta (idempotente).
-# Permite que admin y UG67/UG65/UG56 (en 10.8/16) vean clientes UG63v2 (en 10.9/16).
-if ! grep -q '^route 10.9.0.0' "${DATA_DIR}/openvpn/openvpn.conf"; then
-  echo 'route 10.9.0.0 255.255.0.0' >> "${DATA_DIR}/openvpn/openvpn.conf"
+# Push de ruta cross-subnet a daemon1 — solo push, sin bare route por la misma
+# razon que en daemon2. Idempotente.
+if ! grep -q '^push "route 10.9.0.0' "${DATA_DIR}/openvpn/openvpn.conf"; then
   echo 'push "route 10.9.0.0 255.255.0.0"' >> "${DATA_DIR}/openvpn/openvpn.conf"
-  echo "  Routes cross-subnet agregadas a openvpn.conf (daemon1)"
+  echo "  Push route cross-subnet agregado a openvpn.conf (daemon1)"
 fi
+# Limpiar bare routes si quedaron de versiones anteriores del script.
+sed -i '/^route 10.9.0.0/d' "${DATA_DIR}/openvpn/openvpn.conf"
+sed -i '/^route 10.8.0.0/d' "$DAEMON2_CONF"
 
 # --- Levantar servicios ---
 echo "Levantando servicios..."

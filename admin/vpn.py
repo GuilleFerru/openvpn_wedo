@@ -124,19 +124,25 @@ def _export_ovpn_config(name, daemon='classic'):
     return content
 
 
-def _signal_daemon(daemon, signal='HUP'):
-    """Envia signal al container del daemon (SIGHUP para reload CRL)."""
+def _restart_daemon(daemon):
+    """Full restart del container — necesario porque kylemanna drop privileges
+    a 'nobody' y el SIGHUP re-exec falla leyendo /etc/openvpn/pki/private/.
+    Downtime ~5s, los clientes reconectan solos.
+    """
     container = DAEMON_CONFIG[daemon]['container']
     try:
         subprocess.run(
-            ['docker', 'kill', '-s', signal, container],
-            capture_output=True, timeout=10,
+            ['docker', 'restart', container],
+            capture_output=True, timeout=30,
         )
     except (subprocess.TimeoutExpired, OSError) as e:
-        logger.warning('signal_daemon_failed', extra={'daemon': daemon, 'signal': signal, 'error': str(e)})
+        logger.warning('restart_daemon_failed', extra={'daemon': daemon, 'error': str(e)})
 
 
 def reload_all_daemons():
-    """SIGHUP a todos los daemons — para que releean CRL tras revoke."""
+    """Restart todos los daemons para que relean CRL tras revoke.
+    Usamos restart en vez de SIGHUP porque kylemanna/openvpn no maneja bien
+    SIGHUP (el proceso re-exec corre como nobody y no puede leer el PKI privado).
+    """
     for daemon in DAEMON_CONFIG:
-        _signal_daemon(daemon, 'HUP')
+        _restart_daemon(daemon)
