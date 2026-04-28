@@ -1186,12 +1186,11 @@ body.login-page {
   padding-left: 40px;
   padding-right: 44px;
 }
-.login-input-toggle {
+.login-input-wrap .login-input-toggle {
   position: absolute;
-  right: 8px;
+  right: 6px;
   top: 50%;
   transform: translateY(-50%);
-  margin-top: 5px;
   width: 32px;
   height: 32px;
   display: flex;
@@ -1200,21 +1199,29 @@ body.login-page {
   background: transparent;
   border: none;
   padding: 0;
+  margin: 0;
   cursor: pointer;
   color: var(--muted-2);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
+  box-shadow: none;
   transition: background 0.15s, color 0.15s;
 }
-.login-input-toggle:hover {
-  background: rgba(0, 0, 0, 0.08);
+.login-input-wrap .login-input-toggle:hover:not(:disabled) {
+  transform: translateY(-50%);
+  background: var(--surface-3);
   color: var(--text);
+  box-shadow: none;
 }
-.login-input-toggle:focus {
+.login-input-wrap .login-input-toggle:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.94);
+  box-shadow: none;
+}
+.login-input-wrap .login-input-toggle:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 0 0 2px var(--orange-glow);
 }
-.login-input-toggle i,
-.login-input-toggle svg {
+.login-input-wrap .login-input-toggle i,
+.login-input-wrap .login-input-toggle svg {
   width: 18px;
   height: 18px;
   pointer-events: none;
