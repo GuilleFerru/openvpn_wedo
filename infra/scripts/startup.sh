@@ -57,6 +57,7 @@ fi
 mkdir -p "${DATA_DIR}/openvpn"
 mkdir -p "${DATA_DIR}/clients"
 mkdir -p "${DATA_DIR}/ccd"
+mkdir -p "${DATA_DIR}/ccd-modern"
 
 # --- 3. Configurar firewall OS (ufw) — segunda capa tras GCP firewall rules ---
 echo "[3/8] Configurando ufw..."
@@ -68,9 +69,10 @@ ufw default allow outgoing
 ufw allow 22/tcp    # SSH (solo llega desde IAP gracias al GCP firewall, pero lo declaramos igual)
 ufw allow 80/tcp    # HTTP (Traefik — redirige a HTTPS)
 ufw allow 443/tcp   # HTTPS (Traefik + Let's Encrypt)
-ufw allow 1194/udp  # OpenVPN
+ufw allow 1194/udp  # OpenVPN daemon1 (classic, comp-lzo)
+ufw allow 1195/udp  # OpenVPN daemon2 (modern, para clientes OpenVPN 2.5+ sin comp-lzo)
 ufw --force enable
-echo "  ufw activo — puertos: 22/tcp, 80/tcp, 443/tcp, 1194/udp"
+echo "  ufw activo — puertos: 22/tcp, 80/tcp, 443/tcp, 1194/udp, 1195/udp"
 
 # --- 4. Instalar Docker ---
 echo "[4/9] Instalando Docker..."
@@ -107,16 +109,23 @@ if [ -d "${APP_DIR}/ccd" ] && [ ! -L "${APP_DIR}/ccd" ]; then
   cp -rn "${APP_DIR}/ccd/"* "${DATA_DIR}/ccd/" 2>/dev/null || true
   rm -rf "${APP_DIR}/ccd"
 fi
+# ccd-modern es nuevo — si el repo lo trae como dir no-symlink, migrar al disco.
+if [ -d "${APP_DIR}/ccd-modern" ] && [ ! -L "${APP_DIR}/ccd-modern" ]; then
+  cp -rn "${APP_DIR}/ccd-modern/"* "${DATA_DIR}/ccd-modern/" 2>/dev/null || true
+  rm -rf "${APP_DIR}/ccd-modern"
+fi
 
 ln -sfn "${DATA_DIR}/clients" "${APP_DIR}/clients"
 ln -sfn "${DATA_DIR}/ccd" "${APP_DIR}/ccd"
+ln -sfn "${DATA_DIR}/ccd-modern" "${APP_DIR}/ccd-modern"
 echo "  clients/ → ${DATA_DIR}/clients/"
 echo "  ccd/ → ${DATA_DIR}/ccd/"
+echo "  ccd-modern/ → ${DATA_DIR}/ccd-modern/"
 
 # El container openvpn-admin corre como appuser (UID 1000). Sin este chown,
 # el worker de Flask lee pero no puede escribir clients.json ni archivos CCD,
 # y la creación de clientes falla con PermissionError.
-chown -R 1000:1000 "${DATA_DIR}/clients" "${DATA_DIR}/ccd"
+chown -R 1000:1000 "${DATA_DIR}/clients" "${DATA_DIR}/ccd" "${DATA_DIR}/ccd-modern"
 echo "  Ownership de clients/ y ccd/ asignado a UID 1000 (appuser)"
 
 # --- 7. Crear .env para producción ---
@@ -217,10 +226,73 @@ else
   echo "  PKI ya inicializada, saltando"
 fi
 
+# --- Daemon2 (openvpn-modern) config ---
+# Generado UNA sola vez copiando openvpn.conf + patching con sed. No usamos
+# ovpn_genconfig porque sobrescribe openvpn.conf del daemon1 (kylemanna
+# siempre escribe a ese path). Idempotente via [ ! -f ].
+echo "Configurando daemon2 (openvpn-modern)..."
+DAEMON2_CONF="${DATA_DIR}/openvpn/openvpn-modern.conf"
+if [ ! -f "$DAEMON2_CONF" ]; then
+  echo "  Generando ${DAEMON2_CONF} desde openvpn.conf..."
+  cp "${DATA_DIR}/openvpn/openvpn.conf" "$DAEMON2_CONF"
+  # Cambios vs daemon1:
+  sed -i 's|^server 10.8.0.0 255.255.0.0|server 10.9.0.0 255.255.0.0|' "$DAEMON2_CONF"
+  sed -i 's|^port 1194|port 1195|' "$DAEMON2_CONF"
+  sed -i 's|^dev tun0|dev tun1|' "$DAEMON2_CONF"
+  # Clientes OpenVPN 2.5+ rechazan comp-lzo — borramos todo rastro.
+  sed -i '/^comp-lzo/d' "$DAEMON2_CONF"
+  sed -i '/^push "comp-lzo/d' "$DAEMON2_CONF"
+  # Push de ruta cross-subnet al cliente. NO agregamos `route 10.8.0.0` bare
+  # porque colisionaria con la kernel route que el propio daemon1 crea al tener
+  # tun0 en el netns del host (dos rutas para 10.8/16 → kernel rompe paths).
+  echo 'push "route 10.8.0.0 255.255.0.0"' >> "$DAEMON2_CONF"
+  echo "  openvpn-modern.conf generado"
+else
+  echo "  openvpn-modern.conf ya existe, saltando"
+fi
+
+# Push de ruta cross-subnet a daemon1 — solo push, sin bare route por la misma
+# razon que en daemon2. Idempotente.
+if ! grep -q '^push "route 10.9.0.0' "${DATA_DIR}/openvpn/openvpn.conf"; then
+  echo 'push "route 10.9.0.0 255.255.0.0"' >> "${DATA_DIR}/openvpn/openvpn.conf"
+  echo "  Push route cross-subnet agregado a openvpn.conf (daemon1)"
+fi
+# Limpiar bare routes si quedaron de versiones anteriores del script.
+sed -i '/^route 10.9.0.0/d' "${DATA_DIR}/openvpn/openvpn.conf"
+sed -i '/^route 10.8.0.0/d' "$DAEMON2_CONF"
+
 # --- Levantar servicios ---
 echo "Levantando servicios..."
 docker compose up -d --build
 echo "  Servicios levantados"
+
+# --- iptables host — chain OPENVPN_FWD ---
+# Necesario porque ambos daemons corren con network_mode: host. La chain
+# aisla grupos y rutea cross-daemon sin tocar las reglas de Docker/ufw.
+# Idempotente: flusha y repobla si ya existe.
+echo "Configurando iptables host (OPENVPN_FWD)..."
+bash "${APP_DIR}/infra/scripts/openvpn-iptables.sh"
+
+# Persistir la chain entre reboots via systemd unit one-shot.
+if [ ! -f /etc/systemd/system/openvpn-iptables.service ]; then
+  cat > /etc/systemd/system/openvpn-iptables.service <<UNIT
+[Unit]
+Description=OpenVPN custom iptables chain (OPENVPN_FWD)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash ${APP_DIR}/infra/scripts/openvpn-iptables.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+  systemctl daemon-reload
+  systemctl enable openvpn-iptables.service
+  echo "  openvpn-iptables.service instalado y enabled"
+fi
 
 # --- Configurar backup diario (02:00 UTC) ---
 echo "Configurando backup diario..."

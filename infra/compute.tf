@@ -70,6 +70,19 @@ resource "google_compute_instance" "vpn_vm" {
 
   allow_stopping_for_update = true
 
+  # Evitar REPLACE de la VM ante cambios benignos:
+  # - metadata_startup_script: tiene ForceNew en el provider google. Cualquier
+  #   edit a scripts/startup.sh dispararia recreacion completa (10-20min downtime).
+  #   La VM ya esta bootstrapped; cambios al script se aplican manual via SSH.
+  # - boot_disk[0].initialize_params[0].image: el alias "ubuntu-2204-lts" resuelve
+  #   a una version distinta que el state pinneado → drift permanente.
+  lifecycle {
+    ignore_changes = [
+      metadata_startup_script,
+      boot_disk[0].initialize_params[0].image,
+    ]
+  }
+
   depends_on = [
     google_compute_router_nat.vpn_nat
   ]

@@ -41,6 +41,10 @@
           <div class="stat-num" id="groupsCount">—</div>
           <div class="stat-lbl">Grupos activos</div>
         </div>
+        <div class="stat-card mint">
+          <div class="stat-num" id="modernRatio">—</div>
+          <div class="stat-lbl">Modern / Total</div>
+        </div>
       </div>
 
       <!-- ── Main 2-col grid ──────────────────────────────── -->
@@ -71,12 +75,13 @@
                       <th>Grupo</th>
                       <th>IP VPN</th>
                       <th>IP Real</th>
+                      <th>Daemon</th>
                       <th>Conectado</th>
                       <th>Tráfico</th>
                     </tr>
                   </thead>
                   <tbody id="connectedList">
-                    <tr><td colspan="6" style="color:var(--muted-2);text-align:center;padding:20px;">Cargando...</td></tr>
+                    <tr><td colspan="7" style="color:var(--muted-2);text-align:center;padding:20px;">Cargando...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -171,6 +176,15 @@
                   placeholder="Nombre (ej: gw-oficina, tecnico-juan)"
                   required
                 />
+                <select id="clientModel" required>
+                  <option value="UG67" selected>Milesight UG67</option>
+                  <option value="UG65">Milesight UG65</option>
+                  <option value="UG56">Milesight UG56</option>
+                  <option value="UG63v2">Milesight UG63v2</option>
+                  <option value="Desktop">Desktop / laptop</option>
+                  <option value="Other">Otro</option>
+                </select>
+                <p class="info-text" id="daemonHint" style="margin:4px 2px 10px;">Daemon <span class="badge badge-classic">classic</span> — puerto 1194, subred 10.8.x.x</p>
                 <select id="clientGroup" required>
                   <option value="">— Seleccionar grupo —</option>
                 </select>
