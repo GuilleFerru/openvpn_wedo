@@ -17,17 +17,38 @@
       <div class="login-body">
         <div class="login-lock"><i data-lucide="lock-keyhole"></i></div>
         <p class="login-sub">Panel de Administración</p>
-        <form method="POST">
+        <form method="POST" autocomplete="on">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <input
+            type="text"
+            name="username"
+            value="admin"
+            autocomplete="username"
+            class="login-username-hidden"
+            readonly
+            tabindex="-1"
+            aria-hidden="true"
+          />
           <div class="login-input-wrap">
             <i data-lucide="key-round" class="login-input-icon"></i>
             <input
+              id="login-password"
               type="password"
               name="password"
               placeholder="Contraseña"
+              autocomplete="current-password"
               required
               autofocus
             />
+            <button
+              type="button"
+              id="toggle-password"
+              class="login-input-toggle"
+              aria-label="Mostrar contraseña"
+              tabindex="-1"
+            >
+              <i data-lucide="eye"></i>
+            </button>
           </div>
           <button type="submit"><i data-lucide="log-in" style="width:14px;height:14px;vertical-align:middle;margin-right:6px;"></i>Ingresar</button>
         </form>
@@ -39,6 +60,24 @@
         <i data-lucide="log-in" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;opacity:0.5;"></i>Todos los derechos reservados &copy; {{ current_year }} WeDo VPN
       </div>
     </div>
-    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+    <script>
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      (function () {
+        var btn = document.getElementById('toggle-password');
+        var input = document.getElementById('login-password');
+        if (!btn || !input) return;
+        btn.addEventListener('click', function () {
+          var show = input.type === 'password';
+          input.type = show ? 'text' : 'password';
+          btn.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+          btn.innerHTML = '';
+          var icon = document.createElement('i');
+          icon.setAttribute('data-lucide', show ? 'eye-off' : 'eye');
+          btn.appendChild(icon);
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+          input.focus();
+        });
+      })();
+    </script>
   </body>
 </html>
