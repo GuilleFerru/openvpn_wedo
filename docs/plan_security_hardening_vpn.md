@@ -52,7 +52,11 @@ Esperado: `No changes`. Si muestra drift, resolver antes de empezar — el plan 
 
 ---
 
-## Task 1 — Restringir firewall HTTPS panel admin (P0)
+## Task 1 — Restringir firewall HTTPS panel admin (P0) — ✅ APLICADO 2026-04-28
+
+**Resultado:** `vpn-prod-fw-https` ahora solo acepta `181.228.71.16/32` (IP Guille). Panel responde 302 desde IP autorizada. VPN clientes (11 conectados) sin afectación. Quirk del provider google v5.45.2 obligó a `terraform apply -replace` (in-place update generaba unión de source_ranges en lugar de reemplazo).
+
+
 
 **Problema:** `vpn-prod-fw-https` permite 80/443 desde `0.0.0.0/0`. Panel Flask con auth password único es superficie alta.
 
@@ -73,7 +77,7 @@ Esperado: `No changes`. Si muestra drift, resolver antes de empezar — el plan 
 
 ### Sub-task 1A — Whitelist source IPs
 
-- [ ] **Step 1: Decidir CIDRs admin** (anotar IPs autorizadas)
+- [x] **Step 1: Decidir CIDRs admin** (anotar IPs autorizadas)
 
 Ejemplo: oficina `200.X.Y.Z/32`, casa Guille `190.A.B.C/32`. Como mínimo: la IP desde la que se administra hoy.
 
@@ -82,7 +86,7 @@ Ejemplo: oficina `200.X.Y.Z/32`, casa Guille `190.A.B.C/32`. Como mínimo: la IP
 curl -s ifconfig.me; echo
 ```
 
-- [ ] **Step 2: Agregar variable a `infra/variables.tf`**
+- [x] **Step 2: Agregar variable a `infra/variables.tf`**
 
 ```hcl
 variable "admin_allowed_cidrs" {
@@ -92,7 +96,7 @@ variable "admin_allowed_cidrs" {
 }
 ```
 
-- [ ] **Step 3: Definir valor en `infra/terraform.tfvars`**
+- [x] **Step 3: Definir valor en `infra/terraform.tfvars`**
 
 ```hcl
 admin_allowed_cidrs = [
@@ -101,23 +105,26 @@ admin_allowed_cidrs = [
 ]
 ```
 
-- [ ] **Step 4: Modificar `infra/firewall.tf` rule `https`**
+- [x] **Step 4: Modificar `infra/firewall.tf` rule `https`**
 
 Reemplazar `source_ranges = ["0.0.0.0/0"]` por:
 ```hcl
   source_ranges = var.admin_allowed_cidrs
 ```
 
-- [ ] **Step 5: Plan + apply**
+- [x] **Step 5: Plan + apply**
 
 ```bash
 cd infra
 terraform plan
-# Verificar: solo cambia google_compute_firewall.https.source_ranges
+# ⚠️ Si plan muestra que source_ranges agrega el nuevo CIDR sin sacar el viejo
+# (provider quirk con TypeSet), forzar replace:
+terraform apply -replace=google_compute_firewall.https
+# Si plan muestra reemplazo limpio:
 terraform apply
 ```
 
-- [ ] **Step 6: Verificación funcional**
+- [x] **Step 6: Verificación funcional**
 
 ```bash
 # Desde IP autorizada — debe responder
@@ -128,7 +135,7 @@ curl -sI https://vpn.we-do.io/ | head -1
 # Probar manual.
 ```
 
-- [ ] **Step 7: Confirmar OpenVPN sigue conectando** (panel restringido no afecta UDP 1194/1195)
+- [x] **Step 7: Confirmar OpenVPN sigue conectando** (panel restringido no afecta UDP 1194/1195)
 
 ```bash
 # Conteo clientes — debe igualar baseline PF2
@@ -136,13 +143,9 @@ gcloud compute ssh vpn-prod-vm --zone=us-central1-a --tunnel-through-iap \
   --command="docker exec openvpn cat /tmp/openvpn-status.log 2>/dev/null | grep -c 'CLIENT_LIST,'"
 ```
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
-```bash
-git add infra/firewall.tf infra/variables.tf infra/terraform.tfvars.example
-# NO incluir terraform.tfvars (tiene IPs reales)
-git commit -m "security(fw): restrict admin HTTPS panel to whitelisted CIDRs"
-```
+Commit `3f22d13`: `security(fw): restrict admin HTTPS panel to whitelisted CIDRs`. `terraform.tfvars` no commiteado (gitignored, IP residencial).
 
 > **Si elegiste B (IAP HTTPS)** o **C (Cloudflare)** — abrir nuevo plan; queda fuera de este documento.
 
