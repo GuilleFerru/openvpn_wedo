@@ -13,3 +13,10 @@ repo_url       = "https://github.com/we-do-io/openvpn_wedo.git"
 # Secrets — REQUERIDOS (sin defaults)
 admin_password = ""
 secret_key     = ""
+
+# CIDRs autorizados al panel admin HTTPS — sin entradas = nadie accede
+# Agregar IP pública admin con sufijo /32 (una IP) o /N (rango)
+admin_allowed_cidrs = [
+  # "200.X.Y.Z/32",   # Oficina
+  # "190.A.B.C/32",   # Casa
+]

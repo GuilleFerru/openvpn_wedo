@@ -57,3 +57,9 @@ variable "repo_url" {
   type        = string
   default     = "https://github.com/we-do-io/openvpn_wedo.git"
 }
+
+variable "admin_allowed_cidrs" {
+  description = "CIDRs autorizados para acceder al panel admin HTTPS (puertos 80/443). Lista vacía = nadie puede acceder."
+  type        = list(string)
+  default     = []
+}

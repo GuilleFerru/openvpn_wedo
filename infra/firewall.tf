@@ -31,7 +31,7 @@ resource "google_compute_firewall" "vpn_udp_modern" {
   target_tags   = ["vpn-prod-app"]
 }
 
-# HTTPS + HTTP (redirect) — TCP 80/443 desde cualquier origen
+# HTTPS + HTTP (redirect) — TCP 80/443 desde CIDRs autorizados (var.admin_allowed_cidrs)
 resource "google_compute_firewall" "https" {
   name    = "vpn-prod-fw-https"
   network = google_compute_network.vpn_vpc.name
@@ -41,7 +41,7 @@ resource "google_compute_firewall" "https" {
     ports    = ["80", "443"]
   }
 
-  source_ranges = ["0.0.0.0/0"]
+  source_ranges = var.admin_allowed_cidrs
   target_tags   = ["vpn-prod-app"]
 }
 
