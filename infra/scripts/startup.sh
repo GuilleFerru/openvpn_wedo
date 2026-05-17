@@ -1,6 +1,7 @@
 #!/bin/bash
 # startup.sh — Se ejecuta automáticamente al crear la VM en GCE
-# Lee configuración desde instance metadata (inyectada por Terraform)
+# Config no-sensible viene de instance metadata; secrets (admin-password,
+# secret-key) se leen de Secret Manager con la SA de la VM.
 set -euo pipefail
 
 LOGFILE="/var/log/vpn-startup.log"
@@ -14,10 +15,12 @@ get_meta() {
   curl -sf -H "$METADATA_HEADER" "${METADATA_URL}/$1"
 }
 
-# --- 1. Leer configuración desde metadata ---
-echo "[1/8] Leyendo metadata..."
-ADMIN_PASSWORD=$(get_meta admin-password)
-SECRET_KEY=$(get_meta secret-key)
+# --- 1. Leer configuración ---
+echo "[1/8] Leyendo configuración..."
+# Secrets desde Secret Manager (acceso via SA con role secretmanager.secretAccessor)
+ADMIN_PASSWORD=$(gcloud secrets versions access latest --secret=vpn-admin-password)
+SECRET_KEY=$(gcloud secrets versions access latest --secret=vpn-secret-key)
+# Resto desde instance metadata
 DOMAIN=$(get_meta domain-name)
 ACME_EMAIL=$(get_meta acme-email)
 PUBLIC_IP=$(get_meta public-ip)

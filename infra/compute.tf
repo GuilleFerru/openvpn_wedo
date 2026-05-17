@@ -48,12 +48,11 @@ resource "google_compute_instance" "vpn_vm" {
     }
   }
 
-  # Metadata — secrets inyectados desde Terraform variables
+  # Metadata — config no-sensible. admin_password y secret_key viven en
+  # Secret Manager (ver secrets.tf), startup.sh los lee con la SA de la VM.
   metadata = {
     enable-oslogin     = "TRUE"
     serial-port-enable = "TRUE"
-    admin-password     = var.admin_password
-    secret-key         = var.secret_key
     domain-name        = var.domain_name
     acme-email         = var.acme_email
     public-ip          = google_compute_address.vpn_static_ip.address

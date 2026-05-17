@@ -27,3 +27,16 @@ resource "google_storage_bucket_iam_member" "vpn_backup_writer" {
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.vpn_sa.email}"
 }
+
+# Secret Manager — leer admin-password y secret-key desde la VM
+resource "google_secret_manager_secret_iam_member" "vpn_admin_password_access" {
+  secret_id = google_secret_manager_secret.admin_password.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.vpn_sa.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "vpn_secret_key_access" {
+  secret_id = google_secret_manager_secret.secret_key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.vpn_sa.email}"
+}
