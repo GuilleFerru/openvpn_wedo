@@ -153,7 +153,13 @@ Commit `3f22d13`: `security(fw): restrict admin HTTPS panel to whitelisted CIDRs
 
 ---
 
-## Task 2 — Migrar secrets (admin-password, secret-key) a Secret Manager (P0)
+## Task 2 — Migrar secrets (admin-password, secret-key) a Secret Manager (P0) — ✅ APLICADO 2026-05-17
+
+**Resultado:** `vpn-admin-password` y `vpn-secret-key` creados en Secret Manager. SA `vpn-prod-sa` con role `secretmanager.secretAccessor` sobre ambos. `startup.sh` actualizado para leer via `gcloud secrets versions access` y pusheado a metadata VM (gcloud directo — `ignore_changes` impide path TF). Metadata limpia: ya no contiene `admin-password` ni `secret-key`. Panel sigue OK (302), 21 clientes daemon1 activos, sin restart de VM (uptime 33 días intacto). Commit: `f6a02dd`.
+
+**Sync note:** push del nuevo `startup.sh` se hizo via `gcloud compute instances add-metadata --metadata-from-file=startup-script=...` porque `compute.tf` tiene `lifecycle.ignore_changes = [metadata_startup_script]` (cualquier edit por TF dispara ForceNew = VM recreate). El `.env` en disco persistente sigue con los valores actuales, así que el código nuevo solo correrá en próximo bootstrap.
+
+
 
 **Problema:** secrets en instance metadata son leídos vía API por cualquier identidad con `compute.instances.get`, y por cualquier proceso dentro de la VM vía `metadata.google.internal`. Filtran en exports/snapshots.
 
@@ -163,7 +169,7 @@ Commit `3f22d13`: `security(fw): restrict admin HTTPS panel to whitelisted CIDRs
 - Modify: `infra/compute.tf` (remover keys de `metadata`)
 - Modify: `infra/scripts/startup.sh` (líneas 17-20, 131-145)
 
-- [ ] **Step 1: Crear `infra/secrets.tf`**
+- [x] **Step 1: Crear `infra/secrets.tf`**
 
 ```hcl
 # ============================================================
@@ -195,7 +201,7 @@ resource "google_secret_manager_secret_version" "secret_key" {
 }
 ```
 
-- [ ] **Step 2: Agregar IAM binding en `infra/iam.tf`**
+- [x] **Step 2: Agregar IAM binding en `infra/iam.tf`**
 
 Agregar al final del archivo:
 ```hcl
@@ -213,7 +219,7 @@ resource "google_secret_manager_secret_iam_member" "vpn_secret_key_access" {
 }
 ```
 
-- [ ] **Step 3: Aplicar primero (sin tocar VM ni startup todavía)**
+- [x] **Step 3: Aplicar primero (sin tocar VM ni startup todavía)**
 
 ```bash
 cd infra
@@ -222,7 +228,7 @@ terraform plan
 terraform apply
 ```
 
-- [ ] **Step 4: Verificar SA puede leer**
+- [x] **Step 4: Verificar SA puede leer**
 
 ```bash
 gcloud compute ssh vpn-prod-vm --zone=us-central1-a --tunnel-through-iap --command="
@@ -232,7 +238,7 @@ gcloud compute ssh vpn-prod-vm --zone=us-central1-a --tunnel-through-iap --comma
 ```
 Esperado: `13` (longitud admin-password) y `64` (longitud secret-key) aprox.
 
-- [ ] **Step 5: Modificar `infra/scripts/startup.sh` líneas 17-25**
+- [x] **Step 5: Modificar `infra/scripts/startup.sh` líneas 17-25**
 
 Reemplazar bloque:
 ```bash
@@ -249,19 +255,17 @@ ADMIN_PASSWORD=$(gcloud secrets versions access latest --secret=vpn-admin-passwo
 SECRET_KEY=$(gcloud secrets versions access latest --secret=vpn-secret-key)
 ```
 
-- [ ] **Step 6: Aplicar el cambio en la VM viva (no esperar reboot)**
+- [x] **Step 6: Aplicar el cambio en la VM viva (no esperar reboot)**
 
-`startup.sh` tiene `ignore_changes` en Terraform (línea 81 compute.tf), no se reaplica solo. **Editar el `.env` directamente** en la VM con los valores actuales (que ya están funcionando) — o regenerar `.env` ejecutando el script manual.
+**Aplicado distinto a lo planeado**: pusheamos `startup.sh` actualizado directo a metadata via `gcloud compute instances add-metadata --metadata-from-file=startup-script=scripts/startup.sh`. Esto es sync local→VM sin pasar por TF (que tiene `ignore_changes` + `ForceNew`). El `.env` activo no se toca; el nuevo código solo aplica en próximo bootstrap.
 
-Opción simple: solo confirmar que `.env` tiene los valores y que el panel sigue:
 ```bash
-gcloud compute ssh vpn-prod-vm --zone=us-central1-a --tunnel-through-iap --command="
-  sudo cat /opt/openvpn-admin/.env | grep -E 'ADMIN_PASSWORD|SECRET_KEY' | sed 's/=.*/=<set>/'
-"
+cd infra
+gcloud compute instances add-metadata vpn-prod-vm --zone=us-central1-a \
+  --metadata-from-file=startup-script=scripts/startup.sh
 ```
-Esperado: ambas líneas con `<set>`. **No necesita acción** — `.env` ya tiene los valores; el cambio en `startup.sh` solo se ejecutaría en próximo bootstrap.
 
-- [ ] **Step 7: Quitar secrets de metadata en `infra/compute.tf`**
+- [x] **Step 7: Quitar secrets de metadata en `infra/compute.tf`**
 
 En `metadata = { ... }` (líneas 52-62) borrar:
 ```hcl
@@ -269,7 +273,7 @@ En `metadata = { ... }` (líneas 52-62) borrar:
     secret-key         = var.secret_key
 ```
 
-- [ ] **Step 8: Plan + apply (cambio de metadata es in-place, sin reboot)**
+- [x] **Step 8: Plan + apply (cambio de metadata es in-place, sin reboot)**
 
 ```bash
 cd infra
@@ -278,7 +282,7 @@ terraform plan
 terraform apply
 ```
 
-- [ ] **Step 9: Verificación crítica — `.env` sigue funcionando, panel autentica**
+- [x] **Step 9: Verificación crítica — `.env` sigue funcionando, panel autentica**
 
 ```bash
 # Verificar metadata YA NO contiene secrets
@@ -291,7 +295,7 @@ curl -sI https://vpn.we-do.io/ | head -1
 # Login manual desde browser → confirmar que admin-password sigue válido
 ```
 
-- [ ] **Step 10: Verificación VPN clientes siguen conectados**
+- [x] **Step 10: Verificación VPN clientes siguen conectados**
 
 ```bash
 gcloud compute ssh vpn-prod-vm --zone=us-central1-a --tunnel-through-iap \
@@ -299,12 +303,9 @@ gcloud compute ssh vpn-prod-vm --zone=us-central1-a --tunnel-through-iap \
 # Comparar contra baseline PF2
 ```
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
-```bash
-git add infra/secrets.tf infra/iam.tf infra/compute.tf infra/scripts/startup.sh
-git commit -m "security(secrets): move admin-password and secret-key to Secret Manager"
-```
+Commit `f6a02dd`: `security(secrets): move admin-password and secret-key to Secret Manager`.
 
 **Rollback:** restaurar líneas 55-56 en `compute.tf`, `terraform apply`. Secrets quedan en Secret Manager (no estorban).
 
