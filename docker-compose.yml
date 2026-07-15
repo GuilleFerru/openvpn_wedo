@@ -97,7 +97,11 @@ services:
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.le.acme.tlschallenge=true"
+      # HTTP-01 en vez de TLS-ALPN: 443 está restringido por firewall a CIDRs
+      # whitelisted y LE no podía validar (cert venció 2026-07-12). El puerto 80
+      # queda abierto al mundo solo para el challenge + redirect.
+      - "--certificatesresolvers.le.acme.httpchallenge=true"
+      - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.le.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
     volumes:

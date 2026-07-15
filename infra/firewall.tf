@@ -31,17 +31,34 @@ resource "google_compute_firewall" "vpn_udp_modern" {
   target_tags   = ["vpn-prod-app"]
 }
 
-# HTTPS + HTTP (redirect) — TCP 80/443 desde CIDRs autorizados (var.admin_allowed_cidrs)
+# HTTPS — TCP 443 desde CIDRs autorizados (var.admin_allowed_cidrs)
 resource "google_compute_firewall" "https" {
   name    = "vpn-prod-fw-https"
   network = google_compute_network.vpn_vpc.name
 
   allow {
     protocol = "tcp"
-    ports    = ["80", "443"]
+    ports    = ["443"]
   }
 
   source_ranges = var.admin_allowed_cidrs
+  target_tags   = ["vpn-prod-app"]
+}
+
+# HTTP — TCP 80 abierto al mundo: requerido por ACME HTTP-01 para renovar el
+# cert de Let's Encrypt (LE valida desde IPs arbitrarias). Traefik solo sirve
+# en este puerto el challenge ACME y el redirect a HTTPS; el panel queda
+# protegido por la regla de 443. Ver incidente cert vencido 2026-07.
+resource "google_compute_firewall" "http_acme" {
+  name    = "vpn-prod-fw-http-acme"
+  network = google_compute_network.vpn_vpc.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
   target_tags   = ["vpn-prod-app"]
 }
 
