@@ -50,11 +50,17 @@ def _write_ccd(name, assigned_ip, daemon='classic'):
     """Write CCD file con static IP en el dir del daemon correspondiente."""
     ccd_dir = _ccd_dir_for(daemon)
     os.makedirs(ccd_dir, mode=0o755, exist_ok=True)
-    os.chmod(ccd_dir, 0o755)
+    try:
+        os.chmod(ccd_dir, 0o755)
+    except OSError:
+        pass
     ccd_path = os.path.join(ccd_dir, name)
     with open(ccd_path, 'w') as f:
         f.write(f'ifconfig-push {assigned_ip} 255.255.0.0\n')
-    os.chmod(ccd_path, 0o644)
+    try:
+        os.chmod(ccd_path, 0o644)
+    except OSError:
+        pass
 
 
 def _run_easyrsa_build(name):
