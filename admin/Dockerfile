@@ -1,4 +1,4 @@
-﻿FROM node:20-slim AS frontend-builder
+FROM node:20-slim AS frontend-builder
 WORKDIR /app/frontend
 # Copiar dependencias de Node
 COPY frontend/package*.json ./
@@ -30,10 +30,9 @@ COPY --chown=appuser:appuser blueprints/ blueprints/
 COPY --chown=appuser:appuser templates/ templates/
 COPY --chown=appuser:appuser static/ static/
 
-# === INYECCIÓN DEL FRONTEND REACT ===
-# Copiar los assets generados por Vite (js/css) a la carpeta static/assets
-COPY --from=frontend-builder --chown=appuser:appuser /app/frontend/dist/assets/ ./static/assets/
-# Copiar el index.html (que ahora apunta a /static/assets) y sobreescribir el de templates/
+# Copiar los assets generados por Vite (js/css/favicon) a la carpeta static
+COPY --from=frontend-builder --chown=appuser:appuser /app/frontend/dist/ ./static/
+# Copiar el index.html y sobreescribir el de templates/
 COPY --from=frontend-builder --chown=appuser:appuser /app/frontend/dist/index.html ./templates/index.html
 
 USER appuser

@@ -203,7 +203,7 @@ export default function App() {
             {activeTab === 'dashboard' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
                 <StatCard title="Conectados" value={loading ? '...' : stats.connected} icon={<Activity className="text-wedo-success" />} />
-                <StatCard title="Clientes Totales" value={loading ? '...' : stats.total} icon={<Users className="text-wedo-blue" />} />
+                <StatCard title="Clientes Totales" value={loading ? '...' : stats.total} icon={<Users className="text-wedo-orange" />} />
                 <StatCard title="Grupos Activos" value={loading ? '...' : stats.groups} icon={<HardDrive className="text-wedo-orange" />} />
                 <StatCard title="Modern / Total" value={loading ? '...' : stats.modernRatio} icon={<Server className="text-teal-600" />} />
               </div>
@@ -275,7 +275,7 @@ export default function App() {
                                 {client.group_icon} {client.group_name}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-wedo-blue">
+                            <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-wedo-orange">
                               {client.vpn_ip ? (
                                 <a href={`http://${client.vpn_ip}`} target="_blank" rel="noreferrer" className="hover:underline">
                                   {client.vpn_ip}
@@ -316,13 +316,13 @@ export default function App() {
             )}
             
             {activeTab === 'clientes' && (
-              <div className="bg-wedo-card border-l-4 border-l-wedo-blue rounded-lg overflow-hidden flex flex-col" style={{ boxShadow: '0 2px 8px rgba(0,0,0,.06)' }}>
+              <div className="bg-wedo-card border-l-4 border-l-wedo-orange rounded-lg overflow-hidden flex flex-col" style={{ boxShadow: '0 2px 8px rgba(0,0,0,.06)' }}>
                 <div className="px-6 py-5 border-b border-wedo-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white">
                   <div className="flex items-center gap-3">
                     <h2 className="text-lg font-bold text-slate-800 uppercase tracking-wide">
                       Todos los Clientes
                     </h2>
-                    <span className="bg-wedo-blue/10 text-wedo-blue text-xs px-2.5 py-1 rounded-full font-bold uppercase">
+                    <span className="bg-wedo-orange/10 text-wedo-orange text-xs px-2.5 py-1 rounded-full font-bold uppercase">
                       {allClients.length} Registrados
                     </span>
                   </div>
@@ -333,7 +333,7 @@ export default function App() {
                       <input 
                         type="text" 
                         placeholder="Buscar por nombre, grupo o IP..." 
-                        className="w-full bg-wedo-bg border border-wedo-border rounded-md pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-wedo-blue focus:border-wedo-blue transition-shadow"
+                        className="w-full bg-wedo-bg border border-wedo-border rounded-md pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-wedo-orange focus:border-wedo-orange transition-shadow"
                         value={clientsSearchQuery}
                         onChange={(e) => setClientsSearchQuery(e.target.value)}
                       />
@@ -403,7 +403,7 @@ export default function App() {
                               <td className="px-6 py-4 whitespace-nowrap text-right">
                                 <a 
                                   href={`/download/${encodeURIComponent(client.name)}`}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-wedo-blue hover:bg-wedo-blue/90 text-white rounded text-sm font-medium transition-colors"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-wedo-orange hover:bg-wedo-orange/90 text-white rounded text-sm font-medium transition-colors"
                                 >
                                   <Download size={14} />
                                   .ovpn
@@ -503,7 +503,7 @@ export default function App() {
                                     <span className="text-[10px] font-bold text-slate-400 uppercase">{Math.round((used/total)*100)}%</span>
                                   </div>
                                   <div className="w-full bg-slate-200 rounded-full h-1.5">
-                                    <div className="bg-wedo-blue h-1.5 rounded-full" style={{ width: `${Math.min(100, (used/total)*100)}%` }}></div>
+                                    <div className="bg-wedo-orange h-1.5 rounded-full" style={{ width: `${Math.min(100, (used/total)*100)}%` }}></div>
                                   </div>
                                 </div>
                               </td>
@@ -534,7 +534,7 @@ export default function App() {
                                       setGroupFormData({ name: g.name, icon: g.icon });
                                       setShowGroupModal(true);
                                     }}
-                                    className="p-1.5 text-slate-400 hover:text-wedo-blue hover:bg-blue-50 rounded-md transition-colors"
+                                    className="p-1.5 text-slate-400 hover:text-wedo-orange hover:bg-orange-50 rounded-md transition-colors"
                                     title="Editar Grupo"
                                   >
                                     <Edit2 size={16} />
