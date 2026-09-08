@@ -55,3 +55,8 @@ body {
 .dark .border-slate-100 {
   border-color: #383f48;
 }
+
+.dark .hover\:bg-slate-50:hover { background-color: #313840 !important; }
+.dark .hover\:bg-orange-50:hover { background-color: rgba(238, 118, 35, 0.1) !important; }
+.dark .hover\:bg-wedo-bg:hover { background-color: #1e2124 !important; }
+
