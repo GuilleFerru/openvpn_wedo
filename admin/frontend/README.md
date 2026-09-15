@@ -24,13 +24,19 @@ en `docker-compose.local.yml`, es solo para local).
 ```bash
 cd admin/frontend
 npm ci        # solo la primera vez
-npm run dev   # http://localhost:3000
+npm run dev
 ```
 
-Vite sirve en `:3000` y proxea `/api`, `/static` y `/download` a Flask en `:8080`
-(ver `vite.config.js`). La cookie de sesión de `localhost:8080` también viaja a
-`localhost:3000` porque las cookies ignoran el puerto, así que alcanza con
-loguearse una vez en `:8080`.
+Abrir <http://localhost:3000> — redirige a `/static/`, que es donde Vite sirve la
+app (por el `base: '/static/'`).
+
+Vite proxea `/api`, `/download`, `/login` y `/logout` a Flask en `:8080`; todo lo
+demás lo sirve el propio dev server con HMR. **`/static` no se proxea a
+propósito**: colisionaría con `base` y el dev server terminaría mandando al
+backend sus propios módulos y el cliente de HMR.
+
+La cookie de sesión también viaja entre `:8080` y `:3000` porque las cookies
+ignoran el puerto, así que si ya te logueaste en `:8080` no hace falta de nuevo.
 
 ### B. Probar el bundle ya compilado
 
