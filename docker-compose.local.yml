@@ -1,0 +1,90 @@
+services:
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: docker-socket-proxy
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      CONTAINERS: 1
+      IMAGES: 1
+      POST: 1
+      DELETE: 1
+      EXEC: 1
+    networks:
+      - admin_net
+
+  openvpn:
+    image: kylemanna/openvpn
+    container_name: openvpn
+    # Para local dev, no usamos network_mode: host para evitar conflictos en Windows
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - openvpn_openvpn_data:/etc/openvpn
+      - ./ccd:/etc/openvpn/ccd
+    command: >
+      sh -c "if [ ! -f /etc/openvpn/openvpn.conf ]; then 
+      echo 'No OpenVPN config found, mocking it.' && tail -f /dev/null; 
+      else ovpn_run --config /etc/openvpn/openvpn.conf; fi"
+
+  openvpn-modern:
+    image: kylemanna/openvpn
+    container_name: openvpn-modern
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - openvpn_openvpn_data:/etc/openvpn
+      - ./ccd-modern:/etc/openvpn/ccd-modern
+    command: >
+      sh -c "if [ ! -f /etc/openvpn/openvpn-modern.conf ]; then 
+      echo 'No modern OpenVPN config found, mocking it.' && tail -f /dev/null; 
+      else ovpn_run --config /etc/openvpn/openvpn-modern.conf --client-config-dir /etc/openvpn/ccd-modern; fi"
+
+  openvpn-admin:
+    build: ./admin
+    container_name: openvpn-admin
+    environment:
+      - ADMIN_PASSWORD=admin
+      - SECRET_KEY=dev_secret_key
+      - LOCAL_SERVER_IP=127.0.0.1
+      - VOLUME_NAME=openvpn_openvpn_data
+      - DOCKER_HOST=tcp://docker-socket-proxy:2375
+      - FLASK_DEBUG=1
+    volumes:
+      # NO montar ./admin entero: taparía /app/static y /app/templates/index.html,
+      # que los produce el build de Vite dentro de la imagen y no existen en el
+      # repo. Montamos solo el código Python, así hay hot-reload del backend sin
+      # romper el frontend que Flask sirve en :8080.
+      - ./admin/app.py:/app/app.py
+      - ./admin/config.py:/app/config.py
+      - ./admin/db.py:/app/db.py
+      - ./admin/extensions.py:/app/extensions.py
+      - ./admin/logging_setup.py:/app/logging_setup.py
+      - ./admin/network.py:/app/network.py
+      - ./admin/vpn.py:/app/vpn.py
+      - ./admin/blueprints:/app/blueprints
+      - ./admin/templates/login.html:/app/templates/login.html
+      - ./clients:/app/clients
+      - ./ccd:/app/ccd
+      - ./ccd-modern:/app/ccd-modern
+    ports:
+      - "8080:8080" # Exponemos el panel directamente al 8080 local sin Traefik
+    depends_on:
+      - docker-socket-proxy
+    # flask run --reload para hot-reload del backend. Sin instalar watchdog: el
+    # container corre como appuser (no root) y el reloader por stat de werkzeug
+    # funciona igual sobre los bind mounts de Docker Desktop.
+    command: >
+      sh -c "flask --app app run --host=0.0.0.0 --port=8080 --reload"
+    networks:
+      - admin_net
+      - default
+
+volumes:
+  openvpn_openvpn_data:
+
+networks:
+  admin_net:
+    internal: true
+  default:

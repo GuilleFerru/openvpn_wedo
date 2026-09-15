@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --color-wedo-orange: #ee7623;
+  --color-wedo-dark: #24272a;
+  --color-wedo-text: #9ea1a2;
+  --color-wedo-bg: #f7f8fa;
+  --color-wedo-card: #ffffff;
+  --color-wedo-border: #eeeeee;
+  
+  --color-wedo-success: #4caf50;
+  --color-wedo-blue: #305680;
+  --color-wedo-warning: #ff9800;
+  --color-wedo-danger: #f44336;
+  --color-wedo-destructive: #d32f2f;
+}
+
+.dark {
+  --color-wedo-bg: #1e2124;
+  --color-wedo-card: #2a2f35;
+  --color-wedo-border: #313840;
+  --color-wedo-dark: #2a2f35;
+  --color-wedo-text: #9ea1a2;
+  --color-wedo-blue: #305680;
+}
+
+body {
+  @apply bg-wedo-bg text-slate-800 font-sans transition-colors duration-300;
+}
+
+.dark body {
+  @apply text-slate-200;
+}
+
+/* Fix text colors that were hardcoded to slate-800/slate-700 in components */
+.dark .text-slate-800, 
+.dark .text-slate-700 {
+  @apply text-slate-200;
+}
+.dark .text-slate-600, 
+.dark .text-slate-500 {
+  @apply text-slate-300;
+}
+.dark .bg-white {
+  @apply bg-wedo-card;
+}
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+  background-color: #313840;
+}
+.dark .bg-slate-200 {
+  background-color: #383f48;
+}
+.dark .border-slate-200,
+.dark .border-slate-100 {
+  border-color: #383f48;
+}
+
+.dark .hover\:bg-slate-50:hover { background-color: #313840 !important; }
+.dark .hover\:bg-orange-50:hover { background-color: rgba(238, 118, 35, 0.1) !important; }
+.dark .hover\:bg-wedo-bg:hover { background-color: #1e2124 !important; }
+

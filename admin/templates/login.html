@@ -1,83 +1,257 @@
-<!doctype html>
-<html>
+﻿<!doctype html>
+<html lang="es">
   <head>
-    <title>WeDo VPN</title>
+    <title>WeDo VPN Admin</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" href="/static/img/favicon.png" />
-    <link rel="stylesheet" href="/static/css/style.css" />
     <script src="/static/js/lucide.min.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap');
+      
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      
+      body {
+        font-family: 'Outfit', sans-serif;
+        background-color: #151719; /* Slightly darker than 1e2124 for contrast */
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f0f1f2;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Futuristic background glowing orbs */
+      .bg-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.15;
+        animation: float 20s infinite ease-in-out alternate;
+        z-index: 0;
+      }
+      .orb-1 {
+        width: 400px; height: 400px;
+        background: #ee7623;
+        top: -100px; left: -100px;
+      }
+      .orb-2 {
+        width: 500px; height: 500px;
+        background: #ffffff;
+        bottom: -200px; right: -100px;
+        animation-delay: -5s;
+      }
+
+      @keyframes float {
+        0% { transform: translate(0, 0) scale(1); }
+        100% { transform: translate(50px, 50px) scale(1.1); }
+      }
+
+      /* Glassmorphism Panel */
+      .glass-panel {
+        background: rgba(42, 47, 53, 0.4); /* #2a2f35 with transparency */
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-left: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+        border-radius: 24px;
+        width: 100%;
+        max-width: 380px;
+        position: relative;
+        z-index: 10;
+        margin: 1rem;
+        padding: 3rem 2.5rem;
+      }
+
+      /* Brand */
+      .brand-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+      }
+      .brand-logo { height: 26px; object-fit: contain; }
+      .brand-text { color: #ee7623; font-weight: 700; font-size: 24px; letter-spacing: 1px; }
+      .brand-sub { 
+        color: #9ea1a2; 
+        font-size: 11px; 
+        font-weight: 500; 
+        text-transform: uppercase; 
+        letter-spacing: 3px; 
+        text-align: center;
+        margin-bottom: 2.5rem;
+      }
+
+      .form-group { display: flex; flex-direction: column; gap: 1rem; }
+      
+      .input-wrapper { position: relative; }
+      .input-icon { 
+        position: absolute; top: 50%; left: 1.25rem; transform: translateY(-50%); 
+        color: #636870; width: 18px; height: 18px; transition: color 0.3s;
+      }
+      
+      .input-field {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 12px;
+        padding: 1rem 3rem 1rem 3rem;
+        color: #f0f1f2;
+        font-family: inherit;
+        font-size: 0.95rem;
+        font-weight: 300;
+        outline: none;
+        transition: all 0.3s ease;
+      }
+      .input-field::placeholder { color: #636870; }
+      
+      .input-field:focus {
+        border-color: rgba(238, 118, 35, 0.5);
+        background: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 15px rgba(238, 118, 35, 0.1);
+      }
+      .input-field:focus + .input-icon { color: #ee7623; }
+      
+      .input-toggle {
+        position: absolute; top: 50%; right: 1.25rem; transform: translateY(-50%);
+        background: none; border: none; color: #636870; cursor: pointer; transition: color 0.3s;
+      }
+      .input-toggle:hover { color: #9ea1a2; }
+      .input-toggle i { width: 18px; height: 18px; }
+
+      .btn-submit {
+        width: 100%;
+        background: linear-gradient(135deg, #ee7623, #d96619);
+        color: white;
+        font-family: inherit;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 1rem;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(238,118,35,0.25);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(238,118,35,0.4);
+        background: linear-gradient(135deg, #f3863b, #ee7623);
+      }
+      .btn-submit:active { transform: translateY(0); }
+
+      .error-box {
+        margin-top: 1.5rem;
+        background: rgba(224, 82, 82, 0.1);
+        border: 1px solid rgba(224, 82, 82, 0.2);
+        color: #e05252;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 400;
+      }
+
+      .footer-text { 
+        position: absolute;
+        bottom: 1.5rem;
+        width: 100%;
+        text-align: center;
+        color: #636870; 
+        font-size: 0.7rem; 
+        font-weight: 400; 
+        letter-spacing: 1px;
+        z-index: 10;
+      }
+    </style>
   </head>
-  <body class="login-page">
-    <div class="login-box">
-      <div class="login-brand">
-        <img src="/static/img/wedo-logo.png" alt="WeDo" class="login-logo" />
-        <span class="login-vpn">VPN</span>
+  <body>
+    
+    <!-- Abstract Glowing Orbs -->
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <div class="glass-panel">
+      <div class="brand-container">
+        <img src="/static/img/wedo-logo.png" alt="WeDo" class="brand-logo" />
+        <span class="brand-text">VPN</span>
       </div>
-      <div class="login-divider"></div>
-      <div class="login-body">
-        <div class="login-lock"><i data-lucide="lock-keyhole"></i></div>
-        <p class="login-sub">Panel de Administración</p>
-        <form method="POST" autocomplete="on">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <p class="brand-sub">Admin Portal</p>
+
+      <form method="POST" autocomplete="on" class="form-group">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="text" name="username" value="admin" autocomplete="username" style="display:none;" aria-hidden="true" />
+
+        <div class="input-wrapper">
           <input
-            type="text"
-            name="username"
-            value="admin"
-            autocomplete="username"
-            class="login-username-hidden"
-            readonly
-            tabindex="-1"
-            aria-hidden="true"
+            id="login-password"
+            type="password"
+            name="password"
+            placeholder="Contraseña de acceso"
+            autocomplete="current-password"
+            required
+            autofocus
+            class="input-field"
           />
-          <div class="login-input-wrap">
-            <i data-lucide="key-round" class="login-input-icon"></i>
-            <input
-              id="login-password"
-              type="password"
-              name="password"
-              placeholder="Contraseña"
-              autocomplete="current-password"
-              required
-              autofocus
-            />
-            <button
-              type="button"
-              id="toggle-password"
-              class="login-input-toggle"
-              aria-label="Mostrar contraseña"
-              tabindex="-1"
-            >
-              <i data-lucide="eye"></i>
-            </button>
-          </div>
-          <button type="submit"><i data-lucide="log-in" style="width:14px;height:14px;vertical-align:middle;margin-right:6px;"></i>Ingresar</button>
-        </form>
-        {% if error %}
-        <p class="login-error"><i data-lucide="alert-circle" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>{{ error }}</p>
-        {% endif %}
+          <i data-lucide="key-round" class="input-icon"></i>
+          <button type="button" id="toggle-password" class="input-toggle" aria-label="Mostrar contraseña">
+            <i data-lucide="eye" id="toggle-icon"></i>
+          </button>
+        </div>
+
+        <button type="submit" class="btn-submit">
+          Ingresar
+          <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+        </button>
+      </form>
+
+      {% if error %}
+      <div class="error-box">
+        <i data-lucide="alert-circle" style="width:16px;height:16px;flex-shrink:0;"></i>
+        <p>{{ error }}</p>
       </div>
-      <div class="login-footer">
-        <i data-lucide="log-in" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;opacity:0.5;"></i>Todos los derechos reservados &copy; {{ current_year }} WeDo VPN
-      </div>
+      {% endif %}
     </div>
+
+    <div class="footer-text">
+      &copy; {{ current_year }} WEDO VPN
+    </div>
+
     <script>
-      if (typeof lucide !== 'undefined') lucide.createIcons();
-      (function () {
-        var btn = document.getElementById('toggle-password');
-        var input = document.getElementById('login-password');
-        if (!btn || !input) return;
+      lucide.createIcons();
+      var btn = document.getElementById('toggle-password');
+      var input = document.getElementById('login-password');
+      
+      if (btn && input) {
         btn.addEventListener('click', function () {
           var show = input.type === 'password';
           input.type = show ? 'text' : 'password';
+          
           btn.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
           btn.innerHTML = '';
+          
           var icon = document.createElement('i');
           icon.setAttribute('data-lucide', show ? 'eye-off' : 'eye');
           btn.appendChild(icon);
-          if (typeof lucide !== 'undefined') lucide.createIcons();
+          
+          lucide.createIcons();
           input.focus();
         });
-      })();
+      }
     </script>
   </body>
 </html>
