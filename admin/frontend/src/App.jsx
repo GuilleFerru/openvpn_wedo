@@ -1,9 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Activity, Users, Server, HardDrive, Search, Shield, RefreshCw, Menu, Settings, UserPlus, UserMinus, Folder, Download, Plus, Edit2, Moon, Sun } from 'lucide-react';
+import { Activity, Users, Server, HardDrive, Search, Shield, RefreshCw, UserPlus, UserMinus, Folder, Download, Plus, Edit2, Moon, Sun } from 'lucide-react';
 
 function getCsrfToken() {
   const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
   return match ? decodeURIComponent(match[1]) : "";
+}
+
+// Cuando expira la sesion, Flask responde 302 a /login. fetch sigue el redirect
+// y devuelve el HTML del login con status 200, con lo cual res.json() explota y
+// la UI se queda mostrando datos viejos sin avisar nada. Detectamos ese caso y
+// mandamos al login.
+async function apiFetch(url, options) {
+  const res = await fetch(url, options);
+  if (res.redirected && new URL(res.url).pathname === '/login') {
+    window.location.href = '/login';
+    throw new Error('session_expired');
+  }
+  return res;
 }
 
 export default function App() {
@@ -50,9 +63,9 @@ export default function App() {
   const fetchStats = async () => {
     try {
       const [connRes, clientsRes, groupsRes] = await Promise.all([
-        fetch('/api/connected'),
-        fetch('/api/clients'),
-        fetch('/api/groups')
+        apiFetch('/api/connected'),
+        apiFetch('/api/clients'),
+        apiFetch('/api/groups')
       ]);
       const connData = await connRes.json();
       const clientsData = await clientsRes.json();
@@ -93,7 +106,7 @@ export default function App() {
     const method = editingGroup ? 'PUT' : 'POST';
     
     try {
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 
           'Content-Type': 'application/json',
@@ -724,7 +737,7 @@ function NewClientForm({ groupsDict, onSuccess }) {
     setResult(null);
 
     try {
-      const res = await fetch('/api/create', {
+      const res = await apiFetch('/api/create', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -897,7 +910,7 @@ function RevokeClientForm({ allClients, onSuccess }) {
     setResult(null);
 
     try {
-      const res = await fetch('/api/revoke', {
+      const res = await apiFetch('/api/revoke', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

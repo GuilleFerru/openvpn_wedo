@@ -52,8 +52,19 @@ services:
       - DOCKER_HOST=tcp://docker-socket-proxy:2375
       - FLASK_DEBUG=1
     volumes:
-      # Montamos la carpeta admin entera para que los cambios en Python/HTML/CSS se reflejen (con Flask dev mode)
-      - ./admin:/app
+      # NO montar ./admin entero: taparía /app/static y /app/templates/index.html,
+      # que los produce el build de Vite dentro de la imagen y no existen en el
+      # repo. Montamos solo el código Python, así hay hot-reload del backend sin
+      # romper el frontend que Flask sirve en :8080.
+      - ./admin/app.py:/app/app.py
+      - ./admin/config.py:/app/config.py
+      - ./admin/db.py:/app/db.py
+      - ./admin/extensions.py:/app/extensions.py
+      - ./admin/logging_setup.py:/app/logging_setup.py
+      - ./admin/network.py:/app/network.py
+      - ./admin/vpn.py:/app/vpn.py
+      - ./admin/blueprints:/app/blueprints
+      - ./admin/templates/login.html:/app/templates/login.html
       - ./clients:/app/clients
       - ./ccd:/app/ccd
       - ./ccd-modern:/app/ccd-modern
@@ -61,9 +72,11 @@ services:
       - "8080:8080" # Exponemos el panel directamente al 8080 local sin Traefik
     depends_on:
       - docker-socket-proxy
-    # Usamos flask run para desarrollo para tener recarga automática (hot-reload) en Python
+    # flask run --reload para hot-reload del backend. Sin instalar watchdog: el
+    # container corre como appuser (no root) y el reloader por stat de werkzeug
+    # funciona igual sobre los bind mounts de Docker Desktop.
     command: >
-      sh -c "pip install watchdog && flask --app app run --host=0.0.0.0 --port=8080 --reload"
+      sh -c "flask --app app run --host=0.0.0.0 --port=8080 --reload"
     networks:
       - admin_net
       - default
