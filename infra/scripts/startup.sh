@@ -77,6 +77,27 @@ ufw allow 1195/udp  # OpenVPN daemon2 (modern, para clientes OpenVPN 2.5+ sin co
 ufw --force enable
 echo "  ufw activo — puertos: 22/tcp, 80/tcp, 443/tcp, 1194/udp, 1195/udp"
 
+# --- 3b. Swap ---
+# La e2-small tiene 2 GB de RAM y arranca sin swap. El build del frontend
+# (node + vite dentro del Dockerfile multi-stage) puede pasarse de RAM y
+# disparar el OOM killer, que mataria contenedores en produccion.
+# 2 GB de swap cubren el pico con margen.
+echo "[3b/9] Configurando swap..."
+SWAPFILE="/swapfile"
+if [ ! -f "$SWAPFILE" ]; then
+  fallocate -l 2G "$SWAPFILE"
+  chmod 600 "$SWAPFILE"
+  mkswap "$SWAPFILE"
+  echo "  Swapfile de 2G creado"
+fi
+if ! swapon --show | grep -q "^${SWAPFILE}"; then
+  swapon "$SWAPFILE"
+fi
+if ! grep -q "^${SWAPFILE}" /etc/fstab; then
+  echo "${SWAPFILE} none swap sw 0 0" >> /etc/fstab
+fi
+echo "  Swap activo: $(free -m | awk '/Swap:/ {print $2}') MB"
+
 # --- 4. Instalar Docker ---
 echo "[4/9] Instalando Docker..."
 if ! command -v docker &>/dev/null; then
