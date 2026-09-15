@@ -1,8 +1,8 @@
-FROM node:20-slim AS frontend-builder
+FROM node:22-slim AS frontend-builder
 WORKDIR /app/frontend
 # Copiar dependencias de Node
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm ci
 # Copiar el codigo y hacer la build de produccion
 COPY frontend/ ./
 RUN npm run build
