@@ -709,7 +709,7 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
   
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-t border-wedo-border bg-slate-50 dark:bg-slate-800/50">
+    <div className="flex items-center justify-between px-6 py-3 border-t border-wedo-border bg-slate-50">
       <span className="text-xs text-slate-500">
         Página {currentPage} de {totalPages}
       </span>
@@ -717,14 +717,14 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
         <button 
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="px-3 py-1 text-sm border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-800 disabled:opacity-50 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
+          className="px-3 py-1 text-sm border border-slate-200 rounded bg-white disabled:opacity-50 transition-colors hover:bg-slate-50"
         >
           Anterior
         </button>
         <button 
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="px-3 py-1 text-sm border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-800 disabled:opacity-50 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
+          className="px-3 py-1 text-sm border border-slate-200 rounded bg-white disabled:opacity-50 transition-colors hover:bg-slate-50"
         >
           Siguiente
         </button>
