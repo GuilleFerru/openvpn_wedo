@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Activity, Users, Server, HardDrive, Search, Shield, RefreshCw, UserPlus, UserMinus, Folder, Download, Plus, Edit2, Moon, Sun, ChevronUp, ChevronDown } from 'lucide-react';
+import { Activity, Users, Server, HardDrive, Search, Shield, RefreshCw, UserPlus, UserMinus, Folder, Download, Plus, Edit2, Moon, Sun, ChevronUp, ChevronDown, Key } from 'lucide-react';
+import CredentialsTab from './components/CredentialsTab';
 
-function getCsrfToken() {
+export function getCsrfToken() {
   const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : "";
+  return match ? decodeURIComponent(match[1]) : '';
 }
 
-// Cuando expira la sesion, Flask responde 302 a /login. fetch sigue el redirect
-// y devuelve el HTML del login con status 200, con lo cual res.json() explota y
+// Wrapper para fetch que intercepta el redirect al login 
 // la UI se queda mostrando datos viejos sin avisar nada. Detectamos ese caso y
 // mandamos al login.
-async function apiFetch(url, options) {
+export async function apiFetch(url, options) {
   const res = await fetch(url, options);
   if (res.redirected && new URL(res.url).pathname === '/login') {
     window.location.href = '/login';
@@ -258,6 +258,12 @@ export default function App() {
               label="Todos los Clientes" 
               isActive={activeTab === 'clientes'} 
               onClick={() => setActiveTab('clientes')} 
+            />
+            <NavItem 
+              icon={<Key size={20} />} 
+              label="Accesos" 
+              isActive={activeTab === 'accesos'} 
+              onClick={() => setActiveTab('accesos')} 
             />
             
             <div className="mt-8 mb-2 px-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -544,6 +550,10 @@ export default function App() {
                   onPageChange={setPageClients} 
                 />
               </div>
+            )}
+
+            {activeTab === 'accesos' && (
+              <CredentialsTab allClients={allClients} />
             )}
 
             {activeTab === 'grupos' && (
