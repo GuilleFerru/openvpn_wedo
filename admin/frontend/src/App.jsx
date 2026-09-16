@@ -349,7 +349,10 @@ export default function App() {
                         placeholder="Buscar por nombre, grupo o IP..." 
                         className="w-full bg-wedo-bg border border-wedo-border rounded-md pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-wedo-orange focus:border-wedo-orange transition-shadow"
                         value={clientsSearchQuery}
-                        onChange={(e) => setClientsSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                          setClientsSearchQuery(e.target.value);
+                          setPageClients(1);
+                        }}
                       />
                     </div>
                   </div>
@@ -459,7 +462,10 @@ export default function App() {
                         placeholder="Buscar grupo..." 
                         className="w-full bg-white border border-wedo-border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-wedo-orange focus:border-transparent transition-shadow shadow-sm"
                         value={groupsSearchQuery}
-                        onChange={(e) => setGroupsSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                          setGroupsSearchQuery(e.target.value);
+                          setPageGroups(1);
+                        }}
                       />
                     </div>
                     <button 
