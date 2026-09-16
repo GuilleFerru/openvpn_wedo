@@ -261,17 +261,17 @@ export default function CredentialsTab({ allClients, groupsDict }) {
                     <td className="px-6 py-4 text-sm text-slate-600 truncate max-w-[200px]" title={cred.notes}>
                       {cred.notes || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                    <td className="px-6 py-4 text-sm text-slate-600 max-w-[150px] sm:max-w-[250px]" title={cred.url}>
                       {cred.url ? (
-                        <a href={cred.url.startsWith('http') ? cred.url : `http://${cred.url}`} target="_blank" rel="noreferrer" className="text-wedo-blue hover:underline">
+                        <a href={cred.url.startsWith('http') ? cred.url : `http://${cred.url}`} target="_blank" rel="noreferrer" className="text-wedo-blue hover:underline block truncate">
                           {cred.url}
                         </a>
                       ) : '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">
+                    <td className="px-6 py-4 text-sm font-medium text-slate-700 max-w-[150px] sm:max-w-[200px] truncate" title={cred.username}>
                       {cred.username || '-'}
                       {cred.username && (
-                        <button onClick={() => copyToClipboard(cred.username)} className="ml-2 text-slate-400 hover:text-wedo-orange" title="Copiar Usuario">
+                        <button onClick={() => copyToClipboard(cred.username)} className="ml-2 text-slate-400 hover:text-wedo-orange align-middle inline-flex" title="Copiar Usuario">
                           <Copy size={14} />
                         </button>
                       )}
