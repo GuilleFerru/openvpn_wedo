@@ -233,8 +233,9 @@ export default function CredentialsTab({ allClients, groupsDict }) {
                   <div className="flex items-center">Grupo <SortIcon field="group_name" /></div>
                 </th>
                 <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleSort('client_name')}>
-                  <div className="flex items-center">Cliente <SortIcon field="client_name" /></div>
+                  <div className="flex items-center">Nombre / Cliente <SortIcon field="client_name" /></div>
                 </th>
+                <th className="px-6 py-4">Descripción</th>
                 <th className="px-6 py-4">URL / IP</th>
                 <th className="px-6 py-4">Usuario</th>
                 <th className="px-6 py-4">Contraseña</th>
@@ -244,7 +245,7 @@ export default function CredentialsTab({ allClients, groupsDict }) {
             <tbody className="divide-y divide-wedo-border">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-wedo-text font-medium">
+                  <td colSpan="7" className="px-6 py-12 text-center text-wedo-text font-medium">
                     Cargando credenciales...
                   </td>
                 </tr>
@@ -257,6 +258,9 @@ export default function CredentialsTab({ allClients, groupsDict }) {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap font-bold text-slate-800">{cred.client_name}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 truncate max-w-[200px]" title={cred.notes}>
+                      {cred.notes || '-'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                       {cred.url ? (
                         <a href={cred.url.startsWith('http') ? cred.url : `http://${cred.url}`} target="_blank" rel="noreferrer" className="text-wedo-blue hover:underline">
@@ -299,7 +303,7 @@ export default function CredentialsTab({ allClients, groupsDict }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-wedo-text font-medium">
+                  <td colSpan="7" className="px-6 py-12 text-center text-wedo-text font-medium">
                     {searchQuery ? 'No se encontraron credenciales para tu búsqueda.' : 'No hay credenciales registradas. Haz clic en "Nueva Credencial" para comenzar.'}
                   </td>
                 </tr>
@@ -331,20 +335,23 @@ export default function CredentialsTab({ allClients, groupsDict }) {
               )}
               
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Cliente</label>
-                <select 
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nombre / Cliente</label>
+                <input 
+                  type="text"
+                  list="clients-list"
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-wedo-orange focus:border-transparent transition-shadow disabled:opacity-60"
                   value={clientName}
                   onChange={e => setClientName(e.target.value)}
                   disabled={editingCred !== null}
+                  placeholder="ej. Tanque distrito o elige un cliente VPN"
                   required
-                >
-                  <option value="" disabled>Selecciona un cliente</option>
+                />
+                <datalist id="clients-list">
                   {allClients.map(c => (
-                    <option key={c.name} value={c.name}>{c.name}</option>
+                    <option key={c.name} value={c.name} />
                   ))}
-                </select>
-                {editingCred && <p className="text-xs text-slate-500 mt-1">El cliente no se puede cambiar en edición.</p>}
+                </datalist>
+                {editingCred && <p className="text-xs text-slate-500 mt-1">El nombre no se puede cambiar en edición.</p>}
               </div>
 
               <div>
@@ -384,7 +391,7 @@ export default function CredentialsTab({ allClients, groupsDict }) {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Notas Adicionales</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Descripción / Notas</label>
                 <textarea 
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-wedo-orange focus:border-transparent transition-shadow resize-none h-20"
                   placeholder="Instrucciones, puertos especiales, etc."
