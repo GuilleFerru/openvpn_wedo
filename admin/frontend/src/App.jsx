@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Users, Server, HardDrive, Search, Shield, RefreshCw, UserPlus, UserMinus, Folder, Download, Plus, Edit2, Moon, Sun } from 'lucide-react';
+import { Activity, Users, Server, HardDrive, Search, Shield, RefreshCw, UserPlus, UserMinus, Folder, Download, Plus, Edit2, Moon, Sun, ChevronUp, ChevronDown } from 'lucide-react';
 
 function getCsrfToken() {
   const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
@@ -28,6 +28,10 @@ export default function App() {
   const [clientsSearchQuery, setClientsSearchQuery] = useState('');
   const [clientsStatusFilter, setClientsStatusFilter] = useState('ALL');
   const [groupsSearchQuery, setGroupsSearchQuery] = useState('');
+  
+  // Sorting state for Conexiones Activas
+  const [activeSortField, setActiveSortField] = useState('connected_since');
+  const [activeSortOrder, setActiveSortOrder] = useState('desc');
   
   // Pagination state
   const [pageActive, setPageActive] = useState(1);
@@ -100,6 +104,23 @@ export default function App() {
     const q = searchQuery.toLowerCase();
     return c.name.toLowerCase().includes(q) || 
            (c.group_name && c.group_name.toLowerCase().includes(q));
+  }).sort((a, b) => {
+    let valA, valB;
+    if (activeSortField === 'name') {
+      valA = a.name.toLowerCase();
+      valB = b.name.toLowerCase();
+    } else if (activeSortField === 'group_name') {
+      valA = (a.group_name || '').toLowerCase();
+      valB = (b.group_name || '').toLowerCase();
+    } else {
+      // Default to connected_since
+      valA = new Date(a.connected_since).getTime() || 0;
+      valB = new Date(b.connected_since).getTime() || 0;
+    }
+    
+    if (valA < valB) return activeSortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return activeSortOrder === 'asc' ? 1 : -1;
+    return 0;
   });
 
   const handleGroupSubmit = async (e) => {
@@ -148,6 +169,20 @@ export default function App() {
            g.name.toLowerCase().includes(term) || 
            g.icon.toLowerCase().includes(term);
   });
+
+  const handleSort = (field) => {
+    if (activeSortField === field) {
+      setActiveSortOrder(activeSortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setActiveSortField(field);
+      setActiveSortOrder('asc');
+    }
+  };
+
+  const SortIcon = ({ field }) => {
+    if (activeSortField !== field) return <span className="w-3" />;
+    return activeSortOrder === 'asc' ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />;
+  };
 
   return (
     <div className="min-h-screen bg-wedo-bg text-slate-800 flex flex-col font-sans">
@@ -272,12 +307,18 @@ export default function App() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-wedo-bg text-wedo-text text-xs font-bold uppercase tracking-wider">
-                        <th className="px-6 py-4">Cliente</th>
-                        <th className="px-6 py-4">Grupo</th>
+                        <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleSort('name')}>
+                          <div className="flex items-center">Cliente <SortIcon field="name" /></div>
+                        </th>
+                        <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleSort('group_name')}>
+                          <div className="flex items-center">Grupo <SortIcon field="group_name" /></div>
+                        </th>
                         <th className="px-6 py-4">IP VPN</th>
                         <th className="px-6 py-4">IP Real</th>
                         <th className="px-6 py-4">Daemon</th>
-                        <th className="px-6 py-4">Conectado desde</th>
+                        <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleSort('connected_since')}>
+                          <div className="flex items-center">Conectado desde <SortIcon field="connected_since" /></div>
+                        </th>
                         <th className="px-6 py-4">Tráfico</th>
                       </tr>
                     </thead>
