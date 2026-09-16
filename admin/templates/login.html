@@ -1,19 +1,23 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
   <head>
     <title>WeDo VPN Admin</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WEDO VPN - Admin</title>
     <link rel="icon" type="image/png" href="/static/img/favicon.png" />
     <script src="/static/js/lucide.min.js"></script>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&display=swap');
       
       * { box-sizing: border-box; margin: 0; padding: 0; }
       
       body {
         font-family: 'Outfit', sans-serif;
-        background-color: #151719; /* Slightly darker than 1e2124 for contrast */
+        background-color: #0b0d0e;
+        background-image: 
+          radial-gradient(circle at 15% 15%, rgba(238, 118, 35, 0.08) 0%, transparent 40%),
+          radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.03) 0%, transparent 40%);
         min-height: 100vh;
         display: flex;
         align-items: center;
@@ -23,48 +27,79 @@
         overflow: hidden;
       }
 
-      /* Futuristic background glowing orbs */
-      .bg-orb {
+      /* Fake wireframe globe using CSS pattern */
+      .bg-globe {
         position: absolute;
+        width: 600px;
+        height: 600px;
+        top: -100px;
+        right: -150px;
         border-radius: 50%;
-        filter: blur(80px);
-        opacity: 0.15;
-        animation: float 20s infinite ease-in-out alternate;
+        background-image: 
+          repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.03) 40px),
+          repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.03) 40px);
+        mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+        -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+        transform: perspective(600px) rotateX(45deg) rotateY(-20deg) rotateZ(-15deg);
         z-index: 0;
+        pointer-events: none;
       }
-      .orb-1 {
-        width: 400px; height: 400px;
-        background: #ee7623;
-        top: -100px; left: -100px;
-      }
-      .orb-2 {
-        width: 500px; height: 500px;
-        background: #ffffff;
-        bottom: -200px; right: -100px;
-        animation-delay: -5s;
-      }
-
-      @keyframes float {
-        0% { transform: translate(0, 0) scale(1); }
-        100% { transform: translate(50px, 50px) scale(1.1); }
+      
+      .bg-globe::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 0 40px rgba(255,255,255,0.02) inset;
       }
 
       /* Glassmorphism Panel */
       .glass-panel {
-        background: rgba(42, 47, 53, 0.4); /* #2a2f35 with transparency */
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        border-left: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
-        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        border-radius: 20px;
         width: 100%;
-        max-width: 380px;
+        max-width: 440px;
         position: relative;
         z-index: 10;
         margin: 1rem;
-        padding: 3rem 2.5rem;
+        padding: 4rem 3.5rem;
+      }
+
+      /* Simulated intense glow on edges */
+      .glass-panel::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 20%; right: 20%; height: 1px;
+        background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 100%);
+        box-shadow: 0 0 10px rgba(255,255,255,0.5), 0 0 20px rgba(255,255,255,0.3);
+      }
+      .glass-panel::after {
+        content: "";
+        position: absolute;
+        bottom: 0; left: 30%; right: 30%; height: 1px;
+        background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 100%);
+        box-shadow: 0 0 10px rgba(255,255,255,0.3);
+      }
+      
+      /* Side glares */
+      .glare-left, .glare-right {
+        position: absolute;
+        width: 1px;
+        top: 30%; bottom: 30%;
+      }
+      .glare-left {
+        left: 0;
+        background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 100%);
+        box-shadow: 0 0 8px rgba(255,255,255,0.4);
+      }
+      .glare-right {
+        right: 0;
+        background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 100%);
       }
 
       /* Brand */
@@ -75,86 +110,84 @@
         gap: 0.5rem;
         margin-bottom: 0.25rem;
       }
-      .brand-logo { height: 26px; object-fit: contain; }
-      .brand-text { color: #ee7623; font-weight: 700; font-size: 24px; letter-spacing: 1px; }
+      .brand-text-we { color: #ffffff; font-weight: 800; font-size: 26px; letter-spacing: 2px; }
+      .brand-text-vpn { color: #ee7623; font-weight: 800; font-size: 26px; letter-spacing: 2px; }
       .brand-sub { 
-        color: #9ea1a2; 
-        font-size: 11px; 
+        color: #7a7e83; 
+        font-size: 10px; 
         font-weight: 500; 
         text-transform: uppercase; 
-        letter-spacing: 3px; 
+        letter-spacing: 4px; 
         text-align: center;
-        margin-bottom: 2.5rem;
+        margin-bottom: 3.5rem;
       }
 
-      .form-group { display: flex; flex-direction: column; gap: 1rem; }
+      .form-group { display: flex; flex-direction: column; gap: 1.5rem; }
       
       .input-wrapper { position: relative; }
       .input-icon { 
-        position: absolute; top: 50%; left: 1.25rem; transform: translateY(-50%); 
-        color: #636870; width: 18px; height: 18px; transition: color 0.3s;
+        position: absolute; top: 50%; left: 1.2rem; transform: translateY(-50%); 
+        color: #ee7623; width: 16px; height: 16px; transition: color 0.3s;
       }
       
       .input-field {
         width: 100%;
         background: rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.04);
-        border-radius: 12px;
-        padding: 1rem 3rem 1rem 3rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 0.9rem 3rem;
         color: #f0f1f2;
         font-family: inherit;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         font-weight: 300;
         outline: none;
         transition: all 0.3s ease;
       }
-      .input-field::placeholder { color: #636870; }
+      .input-field::placeholder { color: #5a5f66; font-weight: 400; }
       
       .input-field:focus {
-        border-color: rgba(238, 118, 35, 0.5);
-        background: rgba(0, 0, 0, 0.3);
-        box-shadow: 0 0 15px rgba(238, 118, 35, 0.1);
+        border-color: rgba(238, 118, 35, 0.4);
+        background: rgba(0, 0, 0, 0.4);
+        box-shadow: 0 0 15px rgba(238, 118, 35, 0.05);
       }
-      .input-field:focus + .input-icon { color: #ee7623; }
+      .input-field:focus + .input-icon { color: #f3863b; }
       
       .input-toggle {
-        position: absolute; top: 50%; right: 1.25rem; transform: translateY(-50%);
-        background: none; border: none; color: #636870; cursor: pointer; transition: color 0.3s;
+        position: absolute; top: 50%; right: 1.2rem; transform: translateY(-50%);
+        background: none; border: none; color: #ee7623; cursor: pointer; transition: color 0.3s;
       }
-      .input-toggle:hover { color: #9ea1a2; }
+      .input-toggle:hover { color: #f3863b; }
       .input-toggle i { width: 18px; height: 18px; }
 
       .btn-submit {
         width: 100%;
-        background: linear-gradient(135deg, #ee7623, #d96619);
+        background: #ee7623;
         color: white;
         font-family: inherit;
         font-weight: 600;
-        font-size: 0.95rem;
-        padding: 1rem;
+        font-size: 0.85rem;
+        padding: 0.9rem;
         border: none;
-        border-radius: 12px;
+        border-radius: 8px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        margin-top: 1rem;
+        margin-top: 0.5rem;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(238,118,35,0.25);
         text-transform: uppercase;
         letter-spacing: 1px;
       }
       .btn-submit:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(238,118,35,0.4);
-        background: linear-gradient(135deg, #f3863b, #ee7623);
+        background: #f3863b;
+        box-shadow: 0 0 20px rgba(238,118,35,0.3);
       }
-      .btn-submit:active { transform: translateY(0); }
+      .btn-submit:active { transform: translateY(1px); }
 
       .error-box {
         margin-top: 1.5rem;
-        background: rgba(224, 82, 82, 0.1);
+        background: rgba(224, 82, 82, 0.05);
         border: 1px solid rgba(224, 82, 82, 0.2);
         color: #e05252;
         padding: 0.75rem 1rem;
@@ -171,24 +204,26 @@
         bottom: 1.5rem;
         width: 100%;
         text-align: center;
-        color: #636870; 
-        font-size: 0.7rem; 
+        color: #4a4d52; 
+        font-size: 0.65rem; 
         font-weight: 400; 
-        letter-spacing: 1px;
+        letter-spacing: 2px;
         z-index: 10;
+        text-transform: uppercase;
       }
     </style>
   </head>
   <body>
     
-    <!-- Abstract Glowing Orbs -->
-    <div class="bg-orb orb-1"></div>
-    <div class="bg-orb orb-2"></div>
+    <div class="bg-globe"></div>
 
     <div class="glass-panel">
+      <div class="glare-left"></div>
+      <div class="glare-right"></div>
+      
       <div class="brand-container">
-        <img src="/static/img/wedo-logo.png" alt="WeDo" class="brand-logo" />
-        <span class="brand-text">VPN</span>
+        <span class="brand-text-we">WEDO</span>
+        <span class="brand-text-vpn">VPN</span>
       </div>
       <p class="brand-sub">Admin Portal</p>
 
@@ -207,7 +242,7 @@
             autofocus
             class="input-field"
           />
-          <i data-lucide="key-round" class="input-icon"></i>
+          <i data-lucide="key" class="input-icon"></i>
           <button type="button" id="toggle-password" class="input-toggle" aria-label="Mostrar contraseña">
             <i data-lucide="eye" id="toggle-icon"></i>
           </button>
@@ -215,7 +250,7 @@
 
         <button type="submit" class="btn-submit">
           Ingresar
-          <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+          <i data-lucide="arrow-right" style="width:14px;height:14px;"></i>
         </button>
       </form>
 
@@ -228,7 +263,7 @@
     </div>
 
     <div class="footer-text">
-      &copy; {{ current_year }} WEDO VPN
+      &copy; WEDO VPN
     </div>
 
     <script>
