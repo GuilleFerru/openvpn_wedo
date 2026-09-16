@@ -26,6 +26,7 @@ export default function App() {
   const [groupsDict, setGroupsDict] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [clientsSearchQuery, setClientsSearchQuery] = useState('');
+  const [clientsStatusFilter, setClientsStatusFilter] = useState('ALL');
   const [groupsSearchQuery, setGroupsSearchQuery] = useState('');
   
   // Pagination state
@@ -129,9 +130,16 @@ export default function App() {
 
   const filteredAllClients = allClients.filter(c => {
     const term = clientsSearchQuery.toLowerCase();
-    return c.name.toLowerCase().includes(term) || 
+    const matchesSearch = c.name.toLowerCase().includes(term) || 
            (c.ip && c.ip.includes(term)) ||
            (groupsDict[c.group] && groupsDict[c.group].name.toLowerCase().includes(term));
+           
+    const isOnline = connectedClients.some(conn => conn.name === c.name);
+    let matchesStatus = true;
+    if (clientsStatusFilter === 'ONLINE') matchesStatus = isOnline;
+    if (clientsStatusFilter === 'OFFLINE') matchesStatus = !isOnline;
+    
+    return matchesSearch && matchesStatus;
   });
 
   const filteredGroups = Object.entries(groupsDict).filter(([id, g]) => {
@@ -342,6 +350,18 @@ export default function App() {
                   </div>
                   
                   <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <select 
+                      value={clientsStatusFilter}
+                      onChange={(e) => {
+                        setClientsStatusFilter(e.target.value);
+                        setPageClients(1);
+                      }}
+                      className="bg-wedo-bg border border-wedo-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-wedo-orange text-slate-700 font-bold uppercase"
+                    >
+                      <option value="ALL">Todos</option>
+                      <option value="ONLINE">Online</option>
+                      <option value="OFFLINE">Offline</option>
+                    </select>
                     <div className="relative w-full sm:w-64">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-wedo-text" size={16} />
                       <input 
