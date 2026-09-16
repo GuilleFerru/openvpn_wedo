@@ -4,6 +4,7 @@ import logging
 from extensions import csrf
 from db import load_clients_db, save_clients_db
 from config import db_lock
+from crypto import encrypt_password, decrypt_password
 
 logger = logging.getLogger('openvpn_admin.credentials')
 
@@ -17,11 +18,15 @@ def list_credentials():
     
     creds_list = []
     for client_name, cred in credentials.items():
+        # Desencriptar la contraseña para mandarla al frontend
+        # Si estaba en texto plano, devolverá el texto plano sin romper nada.
+        decrypted_password = decrypt_password(cred.get('password', ''))
+        
         creds_list.append({
             'client_name': client_name,
             'url': cred.get('url', ''),
             'username': cred.get('username', ''),
-            'password': cred.get('password', ''),
+            'password': decrypted_password,
             'notes': cred.get('notes', '')
         })
         
@@ -37,25 +42,25 @@ def save_credential(client_name):
         
     url = data.get('url', '')
     username = data.get('username', '')
-    password = data.get('password', '')
+    plain_password = data.get('password', '')
     notes = data.get('notes', '')
     
     if not client_name:
         return jsonify({'success': False, 'error': 'Client name is required'}), 400
         
+    # Encriptar antes de guardar
+    encrypted_password = encrypt_password(plain_password)
+        
     with db_lock:
         db = load_clients_db()
         
-        if client_name not in db.get('clients', {}):
-            return jsonify({'success': False, 'error': f'Cliente {client_name} no existe'}), 404
-            
         if 'credentials' not in db:
             db['credentials'] = {}
             
         db['credentials'][client_name] = {
             'url': url,
             'username': username,
-            'password': password,
+            'password': encrypted_password,
             'notes': notes
         }
         
