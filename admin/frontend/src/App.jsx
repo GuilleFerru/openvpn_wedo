@@ -95,10 +95,11 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const filteredConnections = connectedClients.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    c.real_ip.includes(searchQuery)
-  );
+  const filteredConnections = connectedClients.filter(c => {
+    const q = searchQuery.toLowerCase();
+    return c.name.toLowerCase().includes(q) || 
+           (c.group_name && c.group_name.toLowerCase().includes(q));
+  });
 
   const handleGroupSubmit = async (e) => {
     e.preventDefault();
@@ -240,7 +241,7 @@ export default function App() {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-wedo-text" size={16} />
                       <input 
                         type="text" 
-                        placeholder="Buscá cliente o IP..." 
+                        placeholder="Buscar cliente o grupo..." 
                         className="w-full bg-wedo-bg border border-wedo-border rounded-md pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-wedo-orange focus:border-wedo-orange transition-shadow"
                         value={searchQuery}
                         onChange={(e) => {
