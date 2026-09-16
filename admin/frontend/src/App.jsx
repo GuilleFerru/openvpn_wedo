@@ -553,7 +553,7 @@ export default function App() {
             )}
 
             {activeTab === 'accesos' && (
-              <CredentialsTab allClients={allClients} />
+              <CredentialsTab allClients={allClients} groupsDict={groupsDict} />
             )}
 
             {activeTab === 'grupos' && (

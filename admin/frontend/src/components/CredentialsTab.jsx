@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Key, Plus, Search, Edit2, Trash2, Copy, Eye, EyeOff, Save, X } from 'lucide-react';
+import { Key, Plus, Search, Edit2, Trash2, Copy, Eye, EyeOff, Save, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { apiFetch, getCsrfToken } from '../App';
 
-export default function CredentialsTab({ allClients }) {
+export default function CredentialsTab({ allClients, groupsDict }) {
   const [credentials, setCredentials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Sort state
+  const [sortField, setSortField] = useState('group_name');
+  const [sortOrder, setSortOrder] = useState('asc');
   
   const [showModal, setShowModal] = useState(false);
   const [editingCred, setEditingCred] = useState(null);
@@ -41,11 +45,49 @@ export default function CredentialsTab({ allClients }) {
     }
   };
 
-  const filteredCredentials = credentials.filter(c => {
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const SortIcon = ({ field }) => {
+    if (sortField !== field) return <span className="w-3" />;
+    return sortOrder === 'asc' ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />;
+  };
+
+  const credentialsWithGroup = credentials.map(cred => {
+    const client = allClients.find(c => c.name === cred.client_name);
+    const group = client && groupsDict && groupsDict[client.group] ? groupsDict[client.group] : {};
+    return {
+      ...cred,
+      group_name: group.name || 'Sin Grupo',
+      group_icon: group.icon || '-'
+    };
+  });
+
+  const filteredCredentials = credentialsWithGroup.filter(c => {
     const q = searchQuery.toLowerCase();
     return c.client_name.toLowerCase().includes(q) || 
+           c.group_name.toLowerCase().includes(q) ||
            c.url.toLowerCase().includes(q) ||
            c.username.toLowerCase().includes(q);
+  }).sort((a, b) => {
+    let valA = sortField === 'group_name' ? a.group_name.toLowerCase() : a.client_name.toLowerCase();
+    let valB = sortField === 'group_name' ? b.group_name.toLowerCase() : b.client_name.toLowerCase();
+    
+    // Fallback to client_name if groups are identical
+    if (valA === valB) {
+      valA = a.client_name.toLowerCase();
+      valB = b.client_name.toLowerCase();
+    }
+    
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
   });
 
   const togglePasswordVisibility = (clientName) => {
@@ -57,7 +99,6 @@ export default function CredentialsTab({ allClients }) {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    // Simple visual feedback could go here
   };
 
   const openAddModal = () => {
@@ -175,7 +216,7 @@ export default function CredentialsTab({ allClients }) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-wedo-text" size={16} />
               <input 
                 type="text" 
-                placeholder="Buscar por cliente o usuario..." 
+                placeholder="Buscar por cliente, grupo o usuario..." 
                 className="w-full bg-wedo-bg border border-wedo-border rounded-md pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-wedo-orange transition-shadow"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -188,7 +229,12 @@ export default function CredentialsTab({ allClients }) {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-wedo-bg text-wedo-text text-xs font-bold uppercase tracking-wider">
-                <th className="px-6 py-4">Cliente</th>
+                <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleSort('group_name')}>
+                  <div className="flex items-center">Grupo <SortIcon field="group_name" /></div>
+                </th>
+                <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleSort('client_name')}>
+                  <div className="flex items-center">Cliente <SortIcon field="client_name" /></div>
+                </th>
                 <th className="px-6 py-4">URL / IP</th>
                 <th className="px-6 py-4">Usuario</th>
                 <th className="px-6 py-4">Contraseña</th>
@@ -198,13 +244,18 @@ export default function CredentialsTab({ allClients }) {
             <tbody className="divide-y divide-wedo-border">
               {loading ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-wedo-text font-medium">
+                  <td colSpan="6" className="px-6 py-12 text-center text-wedo-text font-medium">
                     Cargando credenciales...
                   </td>
                 </tr>
               ) : filteredCredentials.length > 0 ? (
                 filteredCredentials.map((cred, i) => (
                   <tr key={i} className="hover:bg-slate-50 transition-colors group">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-wedo-bg text-slate-700 border border-wedo-border">
+                        {cred.group_icon} {cred.group_name}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap font-bold text-slate-800">{cred.client_name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                       {cred.url ? (
@@ -248,7 +299,7 @@ export default function CredentialsTab({ allClients }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-wedo-text font-medium">
+                  <td colSpan="6" className="px-6 py-12 text-center text-wedo-text font-medium">
                     {searchQuery ? 'No se encontraron credenciales para tu búsqueda.' : 'No hay credenciales registradas. Haz clic en "Nueva Credencial" para comenzar.'}
                   </td>
                 </tr>
