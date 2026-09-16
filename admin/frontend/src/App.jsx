@@ -32,7 +32,7 @@ export default function App() {
   const [pageActive, setPageActive] = useState(1);
   const [pageClients, setPageClients] = useState(1);
   const [pageGroups, setPageGroups] = useState(1);
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = 10;
 
   const [loading, setLoading] = useState(true);
   
