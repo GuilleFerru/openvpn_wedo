@@ -33,6 +33,10 @@ export default function App() {
   const [activeSortField, setActiveSortField] = useState('connected_since');
   const [activeSortOrder, setActiveSortOrder] = useState('desc');
   
+  // Sorting state for Todos los Clientes
+  const [clientsSortField, setClientsSortField] = useState('group');
+  const [clientsSortOrder, setClientsSortOrder] = useState('asc');
+  
   // Pagination state
   const [pageActive, setPageActive] = useState(1);
   const [pageClients, setPageClients] = useState(1);
@@ -161,6 +165,22 @@ export default function App() {
     if (clientsStatusFilter === 'OFFLINE') matchesStatus = !isOnline;
     
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    let valA, valB;
+    if (clientsSortField === 'name') {
+      valA = a.name.toLowerCase();
+      valB = b.name.toLowerCase();
+    } else {
+      // Default to group name
+      const groupA = groupsDict[a.group] || {};
+      const groupB = groupsDict[b.group] || {};
+      valA = (groupA.name || '').toLowerCase();
+      valB = (groupB.name || '').toLowerCase();
+    }
+    
+    if (valA < valB) return clientsSortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return clientsSortOrder === 'asc' ? 1 : -1;
+    return 0;
   });
 
   const filteredGroups = Object.entries(groupsDict).filter(([id, g]) => {
@@ -179,9 +199,23 @@ export default function App() {
     }
   };
 
+  const handleClientsSort = (field) => {
+    if (clientsSortField === field) {
+      setClientsSortOrder(clientsSortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setClientsSortField(field);
+      setClientsSortOrder('asc');
+    }
+  };
+
   const SortIcon = ({ field }) => {
     if (activeSortField !== field) return <span className="w-3" />;
     return activeSortOrder === 'asc' ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />;
+  };
+
+  const ClientsSortIcon = ({ field }) => {
+    if (clientsSortField !== field) return <span className="w-3" />;
+    return clientsSortOrder === 'asc' ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />;
   };
 
   return (
@@ -424,8 +458,12 @@ export default function App() {
                     <thead>
                       <tr className="bg-wedo-bg text-wedo-text text-xs font-bold uppercase tracking-wider">
                         <th className="px-6 py-4">Estado</th>
-                        <th className="px-6 py-4">Cliente</th>
-                        <th className="px-6 py-4">Grupo</th>
+                        <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleClientsSort('name')}>
+                          <div className="flex items-center">Cliente <ClientsSortIcon field="name" /></div>
+                        </th>
+                        <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleClientsSort('group')}>
+                          <div className="flex items-center">Grupo <ClientsSortIcon field="group" /></div>
+                        </th>
                         <th className="px-6 py-4">IP Asignada</th>
                         <th className="px-6 py-4">Modelo</th>
                         <th className="px-6 py-4">Daemon</th>
