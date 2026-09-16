@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
 
 RUN useradd -m -u 1000 appuser
 
-COPY --chown=appuser:appuser app.py config.py extensions.py logging_setup.py network.py db.py vpn.py ./
+COPY --chown=appuser:appuser app.py config.py extensions.py logging_setup.py network.py db.py vpn.py crypto.py ./
 COPY --chown=appuser:appuser blueprints/ blueprints/
 COPY --chown=appuser:appuser templates/ templates/
 COPY --chown=appuser:appuser static/ static/
