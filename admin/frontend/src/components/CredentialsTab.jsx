@@ -343,7 +343,7 @@ export default function CredentialsTab({ allClients, groupsDict }) {
                   value={clientName}
                   onChange={e => setClientName(e.target.value)}
                   disabled={editingCred !== null}
-                  placeholder="ej. Tanque distrito o elige un cliente VPN"
+                  placeholder="ej. Tanque 1 o elige un cliente VPN"
                   required
                 />
                 <datalist id="clients-list">
