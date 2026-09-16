@@ -261,14 +261,14 @@ export default function CredentialsTab({ allClients, groupsDict }) {
                     <td className="px-6 py-4 text-sm text-slate-600 truncate max-w-[200px]" title={cred.notes}>
                       {cred.notes || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 max-w-[150px] sm:max-w-[250px]" title={cred.url}>
+                    <td className="px-6 py-4 text-sm text-slate-600 max-w-[300px] xl:max-w-[400px]" title={cred.url}>
                       {cred.url ? (
                         <a href={cred.url.startsWith('http') ? cred.url : `http://${cred.url}`} target="_blank" rel="noreferrer" className="text-wedo-blue hover:underline block truncate">
                           {cred.url}
                         </a>
                       ) : '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-700 max-w-[150px] sm:max-w-[200px] truncate" title={cred.username}>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-700 max-w-[200px] xl:max-w-[300px] truncate" title={cred.username}>
                       {cred.username || '-'}
                       {cred.username && (
                         <button onClick={() => copyToClipboard(cred.username)} className="ml-2 text-slate-400 hover:text-wedo-orange align-middle inline-flex" title="Copiar Usuario">

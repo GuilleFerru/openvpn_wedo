@@ -294,7 +294,7 @@ export default function App() {
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
-          <div className="max-w-6xl mx-auto w-full flex flex-col gap-6">
+          <div className="max-w-[1400px] mx-auto w-full flex flex-col gap-6">
             
             {/* Solo mostramos los stats en el Dashboard */}
             {activeTab === 'dashboard' && (
