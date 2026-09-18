@@ -57,10 +57,12 @@ def create_app():
     from blueprints.auth import bp as auth_bp
     from blueprints.groups import bp as groups_bp
     from blueprints.clients import bp as clients_bp
-
+    from blueprints.credentials import credentials_bp
+    
     app.register_blueprint(auth_bp)
     app.register_blueprint(groups_bp)
     app.register_blueprint(clients_bp)
+    app.register_blueprint(credentials_bp, url_prefix='/api/credentials')
 
     return app
 

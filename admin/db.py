@@ -30,14 +30,23 @@ logger = logging.getLogger('openvpn_admin.db')
 # =============================================================================
 
 def load_clients_db():
-    """Load clients database from JSON file (migra schema v1 -> v2 si hace falta)."""
+    """Load clients database from JSON file."""
     if os.path.exists(CLIENTS_DB):
         with open(CLIENTS_DB, 'r', encoding='utf-8-sig') as f:
             data = json.load(f)
             if 'groups' not in data:
                 data = _create_default_db(data.get('clients', {}))
                 save_clients_db(data)
+            
+            changed = False
+            if 'credentials' not in data:
+                data['credentials'] = {}
+                changed = True
+                
             if _migrate_schema_v2(data):
+                changed = True
+                
+            if changed:
                 save_clients_db(data)
             return data
     return _create_default_db({})
@@ -49,7 +58,7 @@ def _create_default_db(existing_clients=None):
         'groups': {
             'admin': {
                 'name': 'Administradores',
-                'icon': '👑',
+                'icon': '🛡️',
                 'group_num': ADMIN_GROUP_NUM,
                 # Admin arranca en .2: la .1 del octeto 0 (10.8.0.1) queda
                 # reservada para el gateway del server OpenVPN.
@@ -60,6 +69,7 @@ def _create_default_db(existing_clients=None):
             }
         },
         'clients': existing_clients or {},
+        'credentials': {},
         'next_group_num': 1,
     }
 
@@ -67,7 +77,11 @@ def _create_default_db(existing_clients=None):
 def save_clients_db(db):
     """Save clients database to JSON file."""
     os.makedirs(os.path.dirname(CLIENTS_DB), exist_ok=True)
-    with open(CLIENTS_DB, 'w') as f:
+    # encoding explicito: con ensure_ascii=False los emoji de los iconos de
+    # grupo se escriben tal cual, y sin esto Python usa el encoding de la
+    # plataforma (cp1252 en Windows) y revienta con UnicodeEncodeError,
+    # dejando el clients.json truncado. La lectura ya abria con utf-8-sig.
+    with open(CLIENTS_DB, 'w', encoding='utf-8') as f:
         json.dump(db, f, indent=2, ensure_ascii=False)
 
 

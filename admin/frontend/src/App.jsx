@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Activity, Users, Server, HardDrive, Search, Shield, RefreshCw, UserPlus, UserMinus, Folder, Download, Plus, Edit2, Moon, Sun } from 'lucide-react';
+import { Activity, Users, Server, HardDrive, Search, Shield, RefreshCw, UserPlus, UserMinus, Folder, Download, Plus, Edit2, Moon, Sun, ChevronUp, ChevronDown, Key } from 'lucide-react';
+import CredentialsTab from './components/CredentialsTab';
 
-function getCsrfToken() {
+export function getCsrfToken() {
   const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : "";
+  return match ? decodeURIComponent(match[1]) : '';
 }
 
-// Cuando expira la sesion, Flask responde 302 a /login. fetch sigue el redirect
-// y devuelve el HTML del login con status 200, con lo cual res.json() explota y
+// Wrapper para fetch que intercepta el redirect al login 
 // la UI se queda mostrando datos viejos sin avisar nada. Detectamos ese caso y
 // mandamos al login.
-async function apiFetch(url, options) {
+export async function apiFetch(url, options) {
   const res = await fetch(url, options);
   if (res.redirected && new URL(res.url).pathname === '/login') {
     window.location.href = '/login';
@@ -26,13 +26,22 @@ export default function App() {
   const [groupsDict, setGroupsDict] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [clientsSearchQuery, setClientsSearchQuery] = useState('');
+  const [clientsStatusFilter, setClientsStatusFilter] = useState('ALL');
   const [groupsSearchQuery, setGroupsSearchQuery] = useState('');
+  
+  // Sorting state for Conexiones Activas
+  const [activeSortField, setActiveSortField] = useState('connected_since');
+  const [activeSortOrder, setActiveSortOrder] = useState('desc');
+  
+  // Sorting state for Todos los Clientes
+  const [clientsSortField, setClientsSortField] = useState('group');
+  const [clientsSortOrder, setClientsSortOrder] = useState('asc');
   
   // Pagination state
   const [pageActive, setPageActive] = useState(1);
   const [pageClients, setPageClients] = useState(1);
   const [pageGroups, setPageGroups] = useState(1);
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = 8;
 
   const [loading, setLoading] = useState(true);
   
@@ -95,10 +104,28 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const filteredConnections = connectedClients.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    c.real_ip.includes(searchQuery)
-  );
+  const filteredConnections = connectedClients.filter(c => {
+    const q = searchQuery.toLowerCase();
+    return c.name.toLowerCase().includes(q) || 
+           (c.group_name && c.group_name.toLowerCase().includes(q));
+  }).sort((a, b) => {
+    let valA, valB;
+    if (activeSortField === 'name') {
+      valA = a.name.toLowerCase();
+      valB = b.name.toLowerCase();
+    } else if (activeSortField === 'group_name') {
+      valA = (a.group_name || '').toLowerCase();
+      valB = (b.group_name || '').toLowerCase();
+    } else {
+      // Default to connected_since
+      valA = new Date(a.connected_since).getTime() || 0;
+      valB = new Date(b.connected_since).getTime() || 0;
+    }
+    
+    if (valA < valB) return activeSortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return activeSortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   const handleGroupSubmit = async (e) => {
     e.preventDefault();
@@ -128,9 +155,32 @@ export default function App() {
 
   const filteredAllClients = allClients.filter(c => {
     const term = clientsSearchQuery.toLowerCase();
-    return c.name.toLowerCase().includes(term) || 
+    const matchesSearch = c.name.toLowerCase().includes(term) || 
            (c.ip && c.ip.includes(term)) ||
            (groupsDict[c.group] && groupsDict[c.group].name.toLowerCase().includes(term));
+           
+    const isOnline = connectedClients.some(conn => conn.name === c.name);
+    let matchesStatus = true;
+    if (clientsStatusFilter === 'ONLINE') matchesStatus = isOnline;
+    if (clientsStatusFilter === 'OFFLINE') matchesStatus = !isOnline;
+    
+    return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    let valA, valB;
+    if (clientsSortField === 'name') {
+      valA = a.name.toLowerCase();
+      valB = b.name.toLowerCase();
+    } else {
+      // Default to group name
+      const groupA = groupsDict[a.group] || {};
+      const groupB = groupsDict[b.group] || {};
+      valA = (groupA.name || '').toLowerCase();
+      valB = (groupB.name || '').toLowerCase();
+    }
+    
+    if (valA < valB) return clientsSortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return clientsSortOrder === 'asc' ? 1 : -1;
+    return 0;
   });
 
   const filteredGroups = Object.entries(groupsDict).filter(([id, g]) => {
@@ -139,6 +189,34 @@ export default function App() {
            g.name.toLowerCase().includes(term) || 
            g.icon.toLowerCase().includes(term);
   });
+
+  const handleSort = (field) => {
+    if (activeSortField === field) {
+      setActiveSortOrder(activeSortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setActiveSortField(field);
+      setActiveSortOrder('asc');
+    }
+  };
+
+  const handleClientsSort = (field) => {
+    if (clientsSortField === field) {
+      setClientsSortOrder(clientsSortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setClientsSortField(field);
+      setClientsSortOrder('asc');
+    }
+  };
+
+  const SortIcon = ({ field }) => {
+    if (activeSortField !== field) return <span className="w-3" />;
+    return activeSortOrder === 'asc' ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />;
+  };
+
+  const ClientsSortIcon = ({ field }) => {
+    if (clientsSortField !== field) return <span className="w-3" />;
+    return clientsSortOrder === 'asc' ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />;
+  };
 
   return (
     <div className="min-h-screen bg-wedo-bg text-slate-800 flex flex-col font-sans">
@@ -181,6 +259,12 @@ export default function App() {
               isActive={activeTab === 'clientes'} 
               onClick={() => setActiveTab('clientes')} 
             />
+            <NavItem 
+              icon={<Key size={20} />} 
+              label="Accesos" 
+              isActive={activeTab === 'accesos'} 
+              onClick={() => setActiveTab('accesos')} 
+            />
             
             <div className="mt-8 mb-2 px-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
               Acciones
@@ -210,7 +294,7 @@ export default function App() {
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
-          <div className="max-w-6xl mx-auto w-full flex flex-col gap-6">
+          <div className="max-w-[1400px] mx-auto w-full flex flex-col gap-6">
             
             {/* Solo mostramos los stats en el Dashboard */}
             {activeTab === 'dashboard' && (
@@ -240,7 +324,7 @@ export default function App() {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-wedo-text" size={16} />
                       <input 
                         type="text" 
-                        placeholder="Buscá cliente o IP..." 
+                        placeholder="Buscar cliente o grupo..." 
                         className="w-full bg-wedo-bg border border-wedo-border rounded-md pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-wedo-orange focus:border-wedo-orange transition-shadow"
                         value={searchQuery}
                         onChange={(e) => {
@@ -263,12 +347,18 @@ export default function App() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-wedo-bg text-wedo-text text-xs font-bold uppercase tracking-wider">
-                        <th className="px-6 py-4">Cliente</th>
-                        <th className="px-6 py-4">Grupo</th>
+                        <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleSort('name')}>
+                          <div className="flex items-center">Cliente <SortIcon field="name" /></div>
+                        </th>
+                        <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleSort('group_name')}>
+                          <div className="flex items-center">Grupo <SortIcon field="group_name" /></div>
+                        </th>
                         <th className="px-6 py-4">IP VPN</th>
                         <th className="px-6 py-4">IP Real</th>
                         <th className="px-6 py-4">Daemon</th>
-                        <th className="px-6 py-4">Conectado desde</th>
+                        <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleSort('connected_since')}>
+                          <div className="flex items-center">Conectado desde <SortIcon field="connected_since" /></div>
+                        </th>
                         <th className="px-6 py-4">Tráfico</th>
                       </tr>
                     </thead>
@@ -341,6 +431,18 @@ export default function App() {
                   </div>
                   
                   <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <select 
+                      value={clientsStatusFilter}
+                      onChange={(e) => {
+                        setClientsStatusFilter(e.target.value);
+                        setPageClients(1);
+                      }}
+                      className="bg-wedo-bg border border-wedo-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-wedo-orange text-slate-700 font-bold uppercase"
+                    >
+                      <option value="ALL">Todos</option>
+                      <option value="ONLINE">Online</option>
+                      <option value="OFFLINE">Offline</option>
+                    </select>
                     <div className="relative w-full sm:w-64">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-wedo-text" size={16} />
                       <input 
@@ -348,7 +450,10 @@ export default function App() {
                         placeholder="Buscar por nombre, grupo o IP..." 
                         className="w-full bg-wedo-bg border border-wedo-border rounded-md pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-wedo-orange focus:border-wedo-orange transition-shadow"
                         value={clientsSearchQuery}
-                        onChange={(e) => setClientsSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                          setClientsSearchQuery(e.target.value);
+                          setPageClients(1);
+                        }}
                       />
                     </div>
                   </div>
@@ -359,8 +464,12 @@ export default function App() {
                     <thead>
                       <tr className="bg-wedo-bg text-wedo-text text-xs font-bold uppercase tracking-wider">
                         <th className="px-6 py-4">Estado</th>
-                        <th className="px-6 py-4">Cliente</th>
-                        <th className="px-6 py-4">Grupo</th>
+                        <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleClientsSort('name')}>
+                          <div className="flex items-center">Cliente <ClientsSortIcon field="name" /></div>
+                        </th>
+                        <th className="px-6 py-4 cursor-pointer hover:text-wedo-orange transition-colors" onClick={() => handleClientsSort('group')}>
+                          <div className="flex items-center">Grupo <ClientsSortIcon field="group" /></div>
+                        </th>
                         <th className="px-6 py-4">IP Asignada</th>
                         <th className="px-6 py-4">Modelo</th>
                         <th className="px-6 py-4">Daemon</th>
@@ -443,6 +552,10 @@ export default function App() {
               </div>
             )}
 
+            {activeTab === 'accesos' && (
+              <CredentialsTab allClients={allClients} groupsDict={groupsDict} />
+            )}
+
             {activeTab === 'grupos' && (
               <div className="flex flex-col gap-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -458,7 +571,10 @@ export default function App() {
                         placeholder="Buscar grupo..." 
                         className="w-full bg-white border border-wedo-border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-wedo-orange focus:border-transparent transition-shadow shadow-sm"
                         value={groupsSearchQuery}
-                        onChange={(e) => setGroupsSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                          setGroupsSearchQuery(e.target.value);
+                          setPageGroups(1);
+                        }}
                       />
                     </div>
                     <button 
@@ -702,7 +818,7 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
   
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-t border-wedo-border bg-slate-50 dark:bg-slate-800/50">
+    <div className="flex items-center justify-between px-6 py-3 border-t border-wedo-border bg-slate-50">
       <span className="text-xs text-slate-500">
         Página {currentPage} de {totalPages}
       </span>
@@ -710,14 +826,14 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
         <button 
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="px-3 py-1 text-sm border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-800 disabled:opacity-50 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
+          className="px-3 py-1 text-sm border border-slate-200 rounded bg-white disabled:opacity-50 transition-colors hover:bg-slate-50"
         >
           Anterior
         </button>
         <button 
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="px-3 py-1 text-sm border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-800 disabled:opacity-50 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700"
+          className="px-3 py-1 text-sm border border-slate-200 rounded bg-white disabled:opacity-50 transition-colors hover:bg-slate-50"
         >
           Siguiente
         </button>

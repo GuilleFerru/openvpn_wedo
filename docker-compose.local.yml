@@ -63,6 +63,7 @@ services:
       - ./admin/logging_setup.py:/app/logging_setup.py
       - ./admin/network.py:/app/network.py
       - ./admin/vpn.py:/app/vpn.py
+      - ./admin/crypto.py:/app/crypto.py
       - ./admin/blueprints:/app/blueprints
       - ./admin/templates/login.html:/app/templates/login.html
       - ./clients:/app/clients
