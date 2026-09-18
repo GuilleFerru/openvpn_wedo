@@ -77,7 +77,11 @@ def _create_default_db(existing_clients=None):
 def save_clients_db(db):
     """Save clients database to JSON file."""
     os.makedirs(os.path.dirname(CLIENTS_DB), exist_ok=True)
-    with open(CLIENTS_DB, 'w') as f:
+    # encoding explicito: con ensure_ascii=False los emoji de los iconos de
+    # grupo se escriben tal cual, y sin esto Python usa el encoding de la
+    # plataforma (cp1252 en Windows) y revienta con UnicodeEncodeError,
+    # dejando el clients.json truncado. La lectura ya abria con utf-8-sig.
+    with open(CLIENTS_DB, 'w', encoding='utf-8') as f:
         json.dump(db, f, indent=2, ensure_ascii=False)
 
 

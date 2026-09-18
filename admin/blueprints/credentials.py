@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 import logging
 
-from extensions import csrf
+from blueprints.auth import login_required
 from db import load_clients_db, save_clients_db
 from config import db_lock
 from crypto import encrypt_password, decrypt_password
@@ -10,7 +10,13 @@ logger = logging.getLogger('openvpn_admin.credentials')
 
 credentials_bp = Blueprint('credentials', __name__)
 
+# OJO: los tres endpoints exponen credenciales de gateways en texto plano.
+# Sin @login_required cualquiera que llegue al panel las lee, escribe y borra
+# sin autenticarse — el token CSRF no alcanza como barrera porque app.py
+# entrega la cookie csrf_token en toda respuesta, incluida la del login.
+
 @credentials_bp.route('', methods=['GET'])
+@login_required
 def list_credentials():
     """Returns a list of all credentials mapped by client name."""
     db = load_clients_db()
@@ -34,6 +40,7 @@ def list_credentials():
 
 
 @credentials_bp.route('/<client_name>', methods=['POST', 'PUT'])
+@login_required
 def save_credential(client_name):
     """Saves or updates a credential for a specific client."""
     data = request.get_json()
@@ -71,6 +78,7 @@ def save_credential(client_name):
 
 
 @credentials_bp.route('/<client_name>', methods=['DELETE'])
+@login_required
 def delete_credential(client_name):
     """Deletes a credential for a specific client."""
     with db_lock:

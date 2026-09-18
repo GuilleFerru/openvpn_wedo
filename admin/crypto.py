@@ -14,8 +14,17 @@ def get_fernet():
         else:
             key = Fernet.generate_key()
             os.makedirs(CLIENTS_DIR, exist_ok=True)
-            with open(KEY_FILE, 'wb') as f:
+            # Crear con 0600 desde el arranque: con open() a secas quedaba
+            # 0644 (world-readable) y la clave vive en el mismo directorio
+            # que el clients.json que descifra.
+            fd = os.open(KEY_FILE, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, 'wb') as f:
                 f.write(key)
+        try:
+            os.chmod(KEY_FILE, 0o600)
+        except OSError:
+            # Windows/bind mounts de dev pueden no soportar chmod.
+            pass
         _fernet_instance = Fernet(key)
     return _fernet_instance
 
